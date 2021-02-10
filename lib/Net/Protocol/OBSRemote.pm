@@ -18,6 +18,9 @@ sub nextMessage($self,$msg) {
     return $msg;
 }
 
+# See https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/comments.json
+# for the non-code version of this
+
 sub GetVersion($self) {
     return $self->nextMessage({'request-type' => 'GetVersion'})
 }
@@ -56,5 +59,26 @@ sub GetSourceSettings($self,%sourceInfo) {
         %sourceInfo,
     })
 };
+
+sub SetSourceSettings($self,%sourceInfo) {
+    return $self->nextMessage({
+        'request-type' => 'SetSourceSettings',
+        %sourceInfo,
+    })
+};
+
+sub GetMediaDuration($self, $sourceName) {
+    return $self->nextMessage({
+        'request-type' => 'GetMediaDuration',
+        sourceName => $sourceName,
+    })
+}
+
+sub GetMediaTime($self, $sourceName) {
+    return $self->nextMessage({
+        'request-type' => 'GetMediaTime',
+        sourceName => $sourceName,
+    })
+}
 
 1;
