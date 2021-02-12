@@ -1,11 +1,20 @@
 package Net::Protocol::OBSRemote;
-use 5.020;
+use strict;
 use warnings;
 use Digest::SHA 'sha256_base64';
 #use MIME::Base64 'decode_base64';
 use Moo 2;
+use Filter::signatures;
 use feature 'signatures';
 no warnings 'experimental::signatures';
+
+our $VERSION = '0.01';
+
+=head1 NAME
+
+Net::Protocol::OBSRemote - control OBS via the WebSocket plugin
+
+=cut
 
 has id => (
     is => 'rw',
