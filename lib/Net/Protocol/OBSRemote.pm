@@ -18,6 +18,12 @@ sub nextMessage($self,$msg) {
     return $msg;
 }
 
+=head1 SEE ALSO
+
+L<https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md>
+
+=cut
+
 # See https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/comments.json
 # for the non-code version of this
 
