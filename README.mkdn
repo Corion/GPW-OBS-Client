@@ -1,0 +1,22 @@
+
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/Corion/Net-Protocol-OBSRemote?branch=master&svg=true)](https://ci.appveyor.com/project/Corion/Net-Protocol-OBSRemote)
+[![Windows](https://github.com/Corion/Net-Protocol-OBSRemote/workflows/windows/badge.svg)](https://github.com/Corion/Net-Protocol-OBSRemote/actions?query=workflow%3Awindows)
+[![MacOS](https://github.com/Corion/Net-Protocol-OBSRemote/workflows/macos/badge.svg)](https://github.com/Corion/Net-Protocol-OBSRemote/actions?query=workflow%3Amacos)
+[![Linux](https://github.com/Corion/Net-Protocol-OBSRemote/workflows/linux/badge.svg)](https://github.com/Corion/Net-Protocol-OBSRemote/actions?query=workflow%3Alinux)
+
+# NAME
+
+Net::Protocol::OBSRemote - control OBS via the WebSocket plugin
+
+# SYNOPSIS
+
+    my $protocol = Net::Protocol::OBSRemote->new();
+    my $message = $protocol->GetVersion();
+
+    my $result = $obs_connection->send_message( $message );
+
+See [Mojo::OBS::Client](https://metacpan.org/pod/Mojo::OBS::Client) for a Mojolicious implementation
+
+# SEE ALSO
+
+[https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md](https://github.com/Palakis/obs-websocket/blob/4.x-current/docs/generated/protocol.md)

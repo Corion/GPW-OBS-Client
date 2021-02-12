@@ -14,6 +14,15 @@ our $VERSION = '0.01';
 
 Net::Protocol::OBSRemote - control OBS via the WebSocket plugin
 
+=head1 SYNOPSIS
+
+    my $protocol = Net::Protocol::OBSRemote->new();
+    my $message = $protocol->GetVersion();
+
+    my $result = $obs_connection->send_message( $message );
+
+See L<Mojo::OBS::Client> for a Mojolicious implementation
+
 =cut
 
 has id => (

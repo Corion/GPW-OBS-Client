@@ -13,6 +13,30 @@ use feature 'signatures';
 no warnings 'experimental::signatures';
 with 'Moo::Role::RequestReplyHandler';
 
+=head1 NAME
+
+Mojo::OBS::Client - Mojolicious client for the OBS WebSocket remote plugin
+
+=head1 SYNOPSIS
+
+  my $h = Mojo::OBS::Client->new;
+  my $r = $h->connect($url)->then(sub {
+      $h->send_message($h->protocol->GetVersion());
+  })->then(sub {
+      $h->send_message($h->protocol->GetAuthRequired());
+  })->then(sub( $challenge ) {
+      $h->send_message($h->protocol->Authenticate($password,$challenge));
+  })->then(sub( $challenge ) {
+      $h->send_message($h->protocol->SetTextFreetype2Properties( source => 'Text.NextTalk',text => 'Hello World'))
+  })->then(sub( $challenge ) {
+      $h->send_message($h->protocol->GetSourceSettings( sourceName => 'VLC.Vortrag', sourceType => 'vlc_source'))
+  })->catch(sub {
+      use Data::Dumper;
+      warn Dumper \@_;
+  });
+
+=cut
+
 sub future($self, $loop=$self->ioloop) {
     Future::Mojo->new( $loop )
 }
