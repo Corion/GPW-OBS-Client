@@ -1,6 +1,7 @@
 #!perl
-use 5.020;
+use strict;
 use warnings;
+use Filter::signatures;
 use feature 'signatures';
 no warnings 'experimental::signatures';
 
@@ -10,6 +11,9 @@ use POSIX 'strftime';
 
 use Mojo::OBS::Client;
 use Future;
+
+our $VERSION = '0.01';
+
 
 GetOptions(
     'u=s' => \my $url,

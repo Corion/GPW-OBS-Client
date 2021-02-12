@@ -1,6 +1,7 @@
 #!perl
-use 5.020;
+use strict;
 use warnings;
+use Filter::signatures;
 use feature 'signatures';
 no warnings 'experimental::signatures';
 

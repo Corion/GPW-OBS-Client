@@ -6,6 +6,9 @@ use Mojo::JSON 'decode_json', 'encode_json';
 use Net::Protocol::OBSRemote;
 use Future::Mojo;
 
+our $VERSION = '0.01';
+
+use Filter::signatures;
 use feature 'signatures';
 no warnings 'experimental::signatures';
 with 'Moo::Role::RequestReplyHandler';
