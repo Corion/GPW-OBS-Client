@@ -44,7 +44,6 @@ sub get_reply_key($self,$msg) {
 };
 
 sub connect($self,$ws_url) {
-
     my $res = $self->future();
 
     $self->ua->websocket(
@@ -69,13 +68,14 @@ sub connect($self,$ws_url) {
 
             $tx->on(message => sub($tx,$msg) {
                 my $payload = decode_json($msg);
-                my $id = $self->get_reply_key( $payload );
 
-                if( ! $id ) {
-                    # Notify event listeners
+                if( my $type = $payload->{"update-type"}) {
                     use Data::Dumper;
-                    say Dumper $payload;
-                } else {
+                    #warn '***' . Dumper $payload;
+                    $self->event_received( $type, $payload );
+                } elsif( my $id = $self->get_reply_key( $payload )) {
+                    use Data::Dumper;
+                    #warn '<==' . Dumper $payload;
                     $self->message_received($payload);
                 };
             });
@@ -86,9 +86,13 @@ sub connect($self,$ws_url) {
     return $res;
 }
 
+sub shutdown( $self ) {
+    $self->tx->finish;
+}
+
 sub send_message($self, $msg) {
     my $res = $self->future();
-    use Data::Dumper; say "==>" . Dumper $msg;
+    #use Data::Dumper; say "==>" . Dumper $msg;
     my $id = $msg->{'message-id'};
     $self->on_message( $id, sub($response) {
         $res->done($response);
