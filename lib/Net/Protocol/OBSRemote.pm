@@ -87,4 +87,11 @@ sub GetMediaTime($self, $sourceName) {
     })
 }
 
+sub GetCurrentScene($self) {
+    return $self->nextMessage({
+        'request-type' => 'GetCurrentScene',
+    })
+}
+
+
 1;
