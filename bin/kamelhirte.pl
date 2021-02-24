@@ -112,7 +112,7 @@ sub current_scene( $events, $ts=time) {
     if( $currentSlot ) {
         $current_presentation_end_time = $currentSlot->{start} + ($currentSlot->{talk_duration} // 0);
         $has_QA = ! exists $currentSlot->{scene};
-        $has_Announce = (!$currentSlot->{scene} or $currentSlot->{scene} ne 'Orga-Screenshare');
+        $has_Announce = (!$currentSlot->{scene} or $currentSlot->{scene} ne 'Orga-Screenshare (obs.ninja)');
 
         $current_talk_end_time = $currentSlot->{start} + ($currentSlot->{talk_duration} // $currentSlot->{slot_duration});
         if( $has_QA ) {
@@ -120,7 +120,7 @@ sub current_scene( $events, $ts=time) {
         };
     } else {
         $current_talk_end_time = $ts -1;
-        $has_Announce = (!$nextSlot->{scene} or $nextSlot->{scene} ne 'Orga-Screenshare');
+        $has_Announce = (!$nextSlot->{scene} or $nextSlot->{scene} ne 'Orga-Screenshare (obs.ninja)');
     };
 
     my $current_scene;
@@ -158,7 +158,7 @@ sub current_scene( $events, $ts=time) {
             $ofs = 10000;
         };
 
-        if( $sc eq 'Pausebild' ) {
+        if( $sc eq 'Pausenbild' ) {
             $start = $ts -1;
             $ofs = $nextSlot->{start} - $ts;
         };
