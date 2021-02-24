@@ -111,5 +111,12 @@ sub GetCurrentScene($self) {
     })
 }
 
+sub SetCurrentScene($self, $sceneName) {
+    return $self->nextMessage({
+        'request-type' => 'SetCurrentScene',
+        sceneName => $sceneName
+    })
+}
+
 
 1;

@@ -62,6 +62,17 @@ sub setup_talk( $obs, %info ) {
     return Future->wait_all( @f );
 }
 
+sub switch_scene( $obs, $old_scene, $new_scene ) {
+    return $obs->send_message($obs->protocol->GetCurrentScene())
+    ->then(sub( $info ) {
+        if( $info->{sceneName} eq $old_scene ) {
+            return $obs->send_message($obs->protocol->SetCurrentScene(sceneName => $new_scene))
+        } else {
+            return Future->done(0)
+        }
+    });
+}
+
 login( $url, $password )->then(sub {
     say "Setting up talk";
     return setup_talk( $h,
