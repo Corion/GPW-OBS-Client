@@ -97,11 +97,11 @@ sub connect($self,$ws_url) {
                 my $payload = decode_json($msg);
 
                 if( my $type = $payload->{"update-type"}) {
-                    use Data::Dumper;
+                    #use Data::Dumper;
                     #warn '***' . Dumper $payload;
                     $self->event_received( $type, $payload );
                 } elsif( my $id = $self->get_reply_key( $payload )) {
-                    use Data::Dumper;
+                    #use Data::Dumper;
                     #warn '<==' . Dumper $payload;
                     $self->message_received($payload);
                 };
