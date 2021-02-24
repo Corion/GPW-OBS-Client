@@ -44,14 +44,14 @@ $schedule //= 'schedule.xml';
 my $pauseScene =
 
 my %allScenes = map { $_->{sceneName} => $_ } (
-    { sceneName => 'pre-announce', start_offset => -120 },
-    { sceneName => 'announce', start_offset => -10 },
+    { sceneName => 'Pausenbild.hot', start_offset => -120 },
+    { sceneName => 'Anmoderation', start_offset => -10 },
     { sceneName => 'Vortrag', start_offset => 0, duration => 6 },
     { sceneName => 'Vortrag.Vollbild', start_offset => 6 },
     { sceneName => 'Q&A', end_offset => 0, duration => 10 },
 
-    { sceneName => 'Orga-Screenshare', start_offset => 0 },
-    { sceneName => 'Pause', end_offset => 0 },
+    { sceneName => 'Orga-Screenshare (obs.ninja)', start_offset => 0 },
+    { sceneName => 'Pausenbild', end_offset => 0 },
     { sceneName => 'Ende', start_offset => 0, },
 );
 
@@ -67,7 +67,7 @@ sub read_schedule_xml( $schedule ) {
     # ...
     my $start = time + 15;
     return (
-        { title => 'Welcome to GPW 2021', start => $start,                         slot_duration =>  6, speaker => 'Max', scene => 'Orga-Screenshare' },
+        { title => 'Welcome to GPW 2021', start => $start,                         slot_duration =>  6, speaker => 'Max', scene => 'Orga-Screenshare (obs.ninja)' },
         { title => 'First talk',          start => $start+6, talk_duration => 13, slot_duration => 30, speaker => 'Max' },
         { title => 'Second talk',         start => $start+95, talk_duration => 17, slot_duration => 30, speaker => 'Max' },
     );
@@ -124,7 +124,6 @@ sub current_scene( $events, $ts=time) {
     };
 
     my $current_scene;
-
     if( !$currentSlot ) {
         # The current slot has ended, but the next slot has not started
 
@@ -135,12 +134,12 @@ sub current_scene( $events, $ts=time) {
                                   values %allScenes;
             $sc = (grep {     $ts - $nextSlot->{start} > $_->{start_offset}
                           and $ts < $nextSlot->{start}
-                          and ($has_Announce || ($_->{sceneName} ne 'announce'))
+                          and ($has_Announce || ($_->{sceneName} ne 'Anmoderation'))
                         } @upcoming_scenes)[-1];
             if( $sc ) {
                 $sc = $sc->{sceneName}
             } else {
-                $sc = "Pause";
+                $sc = "Pausenbild";
             };
 
 
@@ -149,10 +148,17 @@ sub current_scene( $events, $ts=time) {
         };
 
         # Copy the scene
-        my $start = $nextSlot->{start};
-        my $ofs = $allScenes{$sc}->{start_offset} // 0;
+        my( $start, $ofs );
+        if( $nextSlot ) {
+            $start = $nextSlot->{start};
+            $ofs = $allScenes{$sc}->{start_offset} // 0;
 
-        if( $sc eq 'Pause' ) {
+        } else {
+            $start = $ts;
+            $ofs = 10000;
+        };
+
+        if( $sc eq 'Pausebild' ) {
             $start = $ts -1;
             $ofs = $nextSlot->{start} - $ts;
         };
@@ -182,7 +188,9 @@ sub current_scene( $events, $ts=time) {
                                          $currentSlot->{start},
                                          );
     } elsif( $nextSlot ) {
-        $current_scene = scene_for_talk( 'Pause', $nextSlot, $ts, $nextSlot->{start} - $ts );
+        $current_scene = scene_for_talk( 'Pausenbild', $nextSlot, $ts, $nextSlot->{start} - $ts );
+    } else {
+        $current_scene = scene_for_talk( 'Ende', undef, $ts, $ts+10000 );
     };
 
     return $current_scene
@@ -204,6 +212,11 @@ sub expand_schedule( @schedule ) {
     my $last_scene;
     for my $ts ($start_time..$end_time) {
         my $scene = current_scene( \@schedule, $ts );
+        if( ! $scene->{sceneName}) {
+            use Data::Dumper;
+            warn Dumper $scene;
+            die "No scene name!";
+        };
         if( !@res or ($last_scene->{sceneName} ne $scene->{sceneName} or $last_scene->{talk_info} != $scene->{talk_info})) {
             #if( my $prev_scene = $res[-1] ) {
             #    if( $scene->{start} < $prev_scene->{start}+$prev_scene->{duration}) {
@@ -226,6 +239,12 @@ sub expand_schedule( @schedule ) {
 }
 
 my @events = expand_schedule(read_schedule_xml( $schedule ));
+
+for my $ev (@events) {
+    if( ! defined $ev->{duration}) {
+        die Dumper \@events;
+    };
+};
 
 my $output_quotes = Term::Output::List->new();
 sub print_events( $events, $ts=time ) {
@@ -274,8 +293,8 @@ sub print_events( $events, $ts=time ) {
 
     $tb->load(@lines);
     my @output = split /\r?\n/, $tb;
-    #say for @output;
-    $output_quotes->output_list(@output);
+    say for @output;
+    #$output_quotes->output_list(@output);
 }
 
 #for (1..160) {
@@ -327,26 +346,38 @@ sub setup_talk( $obs, %info ) {
 sub switch_scene( $obs, $old_scene, $new_scene ) {
     return $obs->send_message($obs->protocol->GetCurrentScene())
     ->then(sub( $info ) {
-        if( $info->{sceneName} eq $old_scene ) {
-            return $obs->send_message($obs->protocol->SetCurrentScene(sceneName => $new_scene))
+        if( $info->{name} eq $old_scene ) {
+            warn "Switching from '$info->{name}' to '$new_scene'";
+            return $obs->send_message($obs->protocol->SetCurrentScene($new_scene))
         } else {
+            warn "Weird/unexpected scene '$info->{name}', not switching to '$new_scene'";
             return Future->done(0)
         }
     });
 }
 
-Mojo::IOLoop->recur(1, sub {
-    print_events(\@events);
+my $last_scene;
+Mojo::IOLoop->recurring(1, sub {
+    my $ts = time();
+    print_events(\@events, $ts);
+
+    #my $sc = current_scene( \@events );
+    my $sc = [grep { $_->{start} <= $ts && $ts < $_->{start} + $_->{duration} } @events]->[0];
+
+    # Set up all the information
+    if( $last_scene ne $sc->{sceneName}) {
+        switch_scene( $h, $last_scene => $sc->{sceneName} )->retain;
+        $last_scene = $sc->{sceneName};
+    };
+
+    # setup_talk($h, 'Text.NextTalk', $sc->{talk_info}->{title});
+
 });
 
-login( $url, $password )->then(sub {
-    say "Setting up talk";
-    return setup_talk( $h,
-        @ARGV
-    );
-})->on_ready(sub {
-    $h->shutdown;
-    $h->ioloop->stop;
+login( $url, $password )->then( sub {
+    $h->send_message($h->protocol->GetCurrentScene())
+})->then(sub( $info ) {
+    $last_scene = $info->{name}
 })->retain;
 
 Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
