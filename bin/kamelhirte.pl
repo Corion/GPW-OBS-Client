@@ -278,11 +278,11 @@ sub print_events( $events, $ts=time ) {
     $output_quotes->output_list(@output);
 }
 
-for (1..160) {
-    print_events( \@events );
-    sleep 1;
-};
-exit;
+#for (1..160) {
+#    print_events( \@events );
+#    sleep 1;
+#};
+#exit;
 
 my $h = Mojo::OBS::Client->new;
 
@@ -334,6 +334,10 @@ sub switch_scene( $obs, $old_scene, $new_scene ) {
         }
     });
 }
+
+Mojo::IOLoop->recur(1, sub {
+    print_events(\@events);
+});
 
 login( $url, $password )->then(sub {
     say "Setting up talk";
