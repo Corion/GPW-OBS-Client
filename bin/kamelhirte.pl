@@ -24,11 +24,13 @@ our $VERSION = '0.01';
 GetOptions(
     'u=s' => \my $url,
     'p=s' => \my $password,
+    'offset|o=s' => \my $offset,
     'schedule|s=s' => \my $schedule,
 ) or pod2usage(2);
 
 $url //= 'ws://localhost:4444';
 $schedule //= 'schedule.xml';
+$offset //= 0;
 
 # watch input file (XML?)
 # reload database on file change
