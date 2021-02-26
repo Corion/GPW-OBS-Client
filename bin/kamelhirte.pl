@@ -41,8 +41,7 @@ $schedule //= 'schedule.xml';
 #     main channel: announce pause/cut, announce next room(?)
 # scene: switch to pause
 
-my $pauseScene =
-
+# This should go into a config
 my %allScenes = map { $_->{sceneName} => $_ } (
     { sceneName => 'Pausenbild.hot', start_offset => -120 },
     { sceneName => 'Anmoderation', start_offset => -10 },
