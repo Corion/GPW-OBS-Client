@@ -118,5 +118,18 @@ sub SetCurrentScene($self, $sceneName) {
     })
 }
 
+sub GetPreviewScene($self) {
+    return $self->nextMessage({
+        'request-type' => 'GetPreviewScene',
+    })
+}
+
+sub SetPreviewScene($self, $sceneName) {
+    return $self->nextMessage({
+        'request-type' => 'SetPreviewScene',
+        'scene-name' => $sceneName
+    })
+}
+
 
 1;
