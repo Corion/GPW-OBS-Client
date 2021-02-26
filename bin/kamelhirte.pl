@@ -379,8 +379,8 @@ my $last_scene;
 Mojo::IOLoop->recurring(1, sub {
     my $ts = time();
 
-    #my $sc = current_scene( \@events );
     my $sc = [grep { $_->{start} <= $ts && $ts < $_->{start} + $_->{duration} } @events]->[0];
+    my $next_sc = [grep { $sc->{start}+$sc->{duration} < $_->{start} } @events]->[0];
 
     my $action = 'idle';
     # Set up all the information
