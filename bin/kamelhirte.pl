@@ -20,7 +20,6 @@ use Carp 'croak';
 
 our $VERSION = '0.01';
 
-
 GetOptions(
     'u=s' => \my $url,
     'p=s' => \my $password,
@@ -45,15 +44,15 @@ $offset //= 0;
 
 # This should go into a config
 my %allScenes = map { $_->{sceneName} => $_ } (
-    { sceneName => 'Pausenbild.hot', start_offset => -120 },
-    { sceneName => 'Anmoderation', start_offset => -10 },
-    { sceneName => 'Vortrag', start_offset => 0, duration => 6 },
-    { sceneName => 'Vortrag.Vollbild', start_offset => 6 },
-    { sceneName => 'Q&A', end_offset => 0, duration => 10 },
+    { sceneName => 'Pausenbild.hot', start_offset => -120, record => 0, },
+    { sceneName => 'Anmoderation', start_offset => -10, record => 1 },
+    { sceneName => 'Vortrag', start_offset => 0, duration => 6, record => 1 },
+    { sceneName => 'Vortrag.Vollbild', start_offset => 6, record => 1 },
+    { sceneName => 'Q&A', end_offset => 0, duration => 10, record => 1 },
 
-    { sceneName => 'Orga-Screenshare (obs.ninja)', start_offset => 0 },
-    { sceneName => 'Pausenbild', end_offset => 0 },
-    { sceneName => 'Ende', start_offset => 0, },
+    { sceneName => 'Orga-Screenshare (obs.ninja)', start_offset => 0, record => 1 },
+    { sceneName => 'Pausenbild', end_offset => 0, record => 0 },
+    { sceneName => 'Ende', start_offset => 0, record => 0 },
 );
 
 my @talkScenes = (qw(
@@ -63,6 +62,11 @@ my @talkScenes = (qw(
 ));
 
 my @schedule = ();
+
+sub get_video_info( $filename ) {
+    # Load the file into OBS
+    # Query OBS for the video duration
+}
 
 sub read_schedule_xml( $schedule ) {
     # ...
@@ -382,6 +386,8 @@ Mojo::IOLoop->recurring(1, sub {
     # Set up all the information
 
     if( $last_talk != $sc->{talk_info}) {
+        # if $sc->{record} is 0, stop recording
+
         my @video;
         if( $sc->{talk_info}->{file} ) {
             push @video,
@@ -399,6 +405,8 @@ Mojo::IOLoop->recurring(1, sub {
 
     if( $last_scene ne $sc->{sceneName}) {
         $action = "Switching from '$last_scene' to '$sc->{sceneName}'";
+
+        # If $sc->{record} goes from 0 to 1, record this
 
         switch_scene( $h, undef => $sc->{sceneName} )
         ->retain;
