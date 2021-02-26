@@ -67,8 +67,10 @@ sub read_schedule_xml( $schedule ) {
     my $start = time + 15;
     return (
         { title => 'Welcome to GPW 2021', start => $start,                         slot_duration =>  6, speaker => 'Max', scene => 'Orga-Screenshare (obs.ninja)' },
-        { title => 'First talk',          start => $start+6, talk_duration => 13, slot_duration => 30, speaker => 'Max' },
-        { title => 'Second talk',         start => $start+45, talk_duration => 17, slot_duration => 30, speaker => 'Max' },
+        { title => 'First talk',          start => $start+6, talk_duration => 13, slot_duration => 30, speaker => 'Max',
+                                          file =>  '2021-02-02 18-21-42.mp4' },
+        { title => 'Second talk',         start => $start+39, talk_duration => 17, slot_duration => 30, speaker => 'Max',
+                                          file => '2020-06-23 16-17-26-tcpic-personal-weather-app-max-maischein.mp4' },
     );
 }
 
@@ -208,30 +210,42 @@ sub expand_schedule( @schedule ) {
     my $start_time = time();
     my $end_time = $schedule[-1]->{start} + $schedule[-1]->{slot_duration};
 
-    my $last_scene;
+    my $last_scene = {
+        sceneName => '',
+        talk_info => 0,
+    };
     for my $ts ($start_time..$end_time) {
         my $scene = current_scene( \@schedule, $ts );
+        #$scene->{talk_info} //= 0;
         if( ! $scene->{sceneName}) {
             use Data::Dumper;
             warn Dumper $scene;
             die "No scene name!";
         };
-        if( !@res or ($last_scene->{sceneName} ne $scene->{sceneName} or $last_scene->{talk_info} != $scene->{talk_info})) {
+
+        my $different_scene;
+        {
+            no warnings 'uninitialized';
+            $different_scene = $last_scene
+                              && (($last_scene->{sceneName} ne $scene->{sceneName})
+                                   || (defined $last_scene->{talk_info} xor defined $scene->{talk_info}))
+        };
+
+        if( !@res or $different_scene) {
             if( my $prev_scene = $res[-1] ) {
                 if( $scene->{start} < $prev_scene->{start}+$prev_scene->{duration}) {
-                    my $d = $prev_scene->{start}+$prev_scene->{duration} - $scene->{start};
+                    my $d = $scene->{start} - $prev_scene->{start};
+                    #warn "$scene->{sceneName} overlaps $prev_scene->{sceneName} ($d)";
                     if( $d > 0 ) {
-                        $prev_scene->{duration} = $prev_scene->{start}+$prev_scene->{duration}-$scene->{start};
+                        $prev_scene->{duration} = $d;
                     } else {
-                        use Data::Dumper;
-                        warn "Removing " . Dumper $res[-1];
                         pop @res;
                     };
                 };
             };
             push @res, $scene;
         };
-        $last_scene = $scene;
+        $last_scene = $res[-1];
     }
 
     # Fix up the durations here, in the case we lack any?!
@@ -301,12 +315,6 @@ sub print_events( $action, $events, $ts=time ) {
     $output_quotes->output_list(@output, $action//'');
 }
 
-#for (1..160) {
-#    print_events( \@events );
-#    sleep 1;
-#};
-#exit;
-
 my $h = Mojo::OBS::Client->new;
 
 sub login( $url, $password ) {
@@ -350,16 +358,17 @@ sub setup_talk( $obs, %info ) {
 sub switch_scene( $obs, $old_scene, $new_scene ) {
     return $obs->send_message($obs->protocol->GetCurrentScene())
     ->then(sub( $info ) {
-        if( $info->{name} eq $old_scene ) {
+        #if( $info->{name} eq $old_scene ) {
             #warn "Switching from '$info->{name}' to '$new_scene'";
             return $obs->send_message($obs->protocol->SetCurrentScene($new_scene))
-        } else {
-            warn "Weird/unexpected scene '$info->{name}', not switching to '$new_scene'";
-            return Future->done(0)
-        }
+        #} else {
+        #    warn "Weird/unexpected scene '$info->{name}', not switching to '$new_scene'";
+        #    return Future->done(0)
+        #}
     });
 }
 
+my $last_talk;
 my $last_scene;
 Mojo::IOLoop->recurring(1, sub {
     my $ts = time();
@@ -370,9 +379,27 @@ Mojo::IOLoop->recurring(1, sub {
     my $action = 'idle';
     # Set up all the information
 
+    if( $last_talk != $sc->{talk_info}) {
+        my @video;
+        if( $sc->{talk_info}->{file} ) {
+            push @video,
+                'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{file};
+        };
+        setup_talk( $h,
+            @video,
+            'Text.ThisTalk' => $sc->{talk_info}->{title},
+            'Text.ThisSpeaker' => $sc->{talk_info}->{speaker},
+            'Text.NextTalk' => $sc->{talk_info}->{title},
+            'Text.NextSpeaker' => $sc->{talk_info}->{speaker},
+        )->retain;
+        $last_talk = $sc->{talk_info};
+    };
+
     if( $last_scene ne $sc->{sceneName}) {
         $action = "Switching from '$last_scene' to '$sc->{sceneName}'";
-        switch_scene( $h, $last_scene => $sc->{sceneName} )->retain;
+
+        switch_scene( $h, undef => $sc->{sceneName} )
+        ->retain;
         $last_scene = $sc->{sceneName};
     };
     print_events($action, \@events, $ts);
