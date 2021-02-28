@@ -131,5 +131,16 @@ sub SetPreviewScene($self, $sceneName) {
     })
 }
 
+sub StartRecording($self) {
+    return $self->nextMessage({
+        'request-type' => 'StartRecording',
+    })
+}
+
+sub StopRecording($self) {
+    return $self->nextMessage({
+        'request-type' => 'StopRecording',
+    })
+}
 
 1;
