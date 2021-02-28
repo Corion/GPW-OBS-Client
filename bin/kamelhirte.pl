@@ -73,9 +73,10 @@ sub read_schedule_xml( $schedule ) {
     my $start = time + 15;
     return (
         { title => 'Welcome to GPW 2021', start => $start,                         slot_duration =>  6, speaker => 'Max', scene => 'Orga-Screenshare (obs.ninja)' },
-        { title => 'First talk',          start => $start+6, talk_duration => 13, slot_duration => 30, speaker => 'Max',
+        { title => 'Pause', start => $start+6, slot_duration =>  6, speaker => '-', scene => 'Pausenbild' },
+        { title => 'First talk',          start => $start+12, talk_duration => 13, slot_duration => 30, speaker => 'Max',
                                           file =>  '2021-02-02 18-21-42.mp4' },
-        { title => 'Second talk',         start => $start+39, talk_duration => 17, slot_duration => 30, speaker => 'Max',
+        { title => 'Second talk',         start => $start+50, talk_duration => 17, slot_duration => 30, speaker => 'Max',
                                           file => '2020-06-23 16-17-26-tcpic-personal-weather-app-max-maischein.mp4' },
     );
 }
