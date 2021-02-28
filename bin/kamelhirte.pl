@@ -374,8 +374,8 @@ sub switch_scene( $obs, $old_scene, $new_scene ) {
     });
 }
 
-my $last_talk;
-my $last_scene;
+my $last_talk = 0;
+my $last_scene = 0;
 Mojo::IOLoop->recurring(1, sub {
     my $ts = time();
 
@@ -400,28 +400,28 @@ Mojo::IOLoop->recurring(1, sub {
             'Text.NextTalk' => $sc->{talk_info}->{title},
             'Text.NextSpeaker' => $sc->{talk_info}->{speaker},
         )->retain;
-        $last_talk = $sc->{talk_info};
     };
 
-    if( $last_scene ne $sc->{sceneName}) {
+    if( !$last_scene or ($last_scene->{sceneName} ne $sc->{sceneName} or $last_talk != $sc->{talk_info})) {
         $action = "Switching from '$last_scene' to '$sc->{sceneName}'";
 
         # If $sc->{record} goes from 0 to 1, record this
 
         switch_scene( $h, undef => $sc->{sceneName} )
         ->retain;
-        $last_scene = $sc->{sceneName};
     };
     print_events($action, \@events, $ts);
 
     # setup_talk($h, 'Text.NextTalk', $sc->{talk_info}->{title});
 
+    $last_talk = $sc->{talk_info};
+    $last_scene = $sc;
 });
 
 login( $url, $password )->then( sub {
     $h->send_message($h->protocol->GetCurrentScene())
 })->then(sub( $info ) {
-    $last_scene = $info->{name}
+    $last_scene = $info
 })->retain;
 
 Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
