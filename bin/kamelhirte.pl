@@ -382,37 +382,56 @@ Mojo::IOLoop->recurring(1, sub {
     my $sc = [grep { $_->{start} <= $ts && $ts < $_->{start} + $_->{duration} } @events]->[0];
     my $next_sc = [grep { $sc->{start}+$sc->{duration} < $_->{start} } @events]->[0];
 
-    my $action = 'idle';
+    my @actions;
     # Set up all the information
 
+    my $f = Future->done;
+
     if( $last_talk != $sc->{talk_info}) {
-        # if $sc->{record} is 0, stop recording
+        # if we changed the talk, stop recording
+        push @actions, "Stopping recording";
+        $f = $f->then(sub {
+            $h->send_message( $h->protocol->StopRecording())
+        });
 
         my @video;
         if( $sc->{talk_info}->{file} ) {
             push @video,
                 'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{file};
         };
+        $f = $f->then(sub {
         setup_talk( $h,
             @video,
             'Text.ThisTalk' => $sc->{talk_info}->{title},
             'Text.ThisSpeaker' => $sc->{talk_info}->{speaker},
             'Text.NextTalk' => $sc->{talk_info}->{title},
             'Text.NextSpeaker' => $sc->{talk_info}->{speaker},
-        )->retain;
+        )});
     };
 
     if( !$last_scene or ($last_scene->{sceneName} ne $sc->{sceneName} or $last_talk != $sc->{talk_info})) {
-        $action = "Switching from '$last_scene' to '$sc->{sceneName}'";
 
         # If $sc->{record} goes from 0 to 1, record this
+        # (maybe also set the filename to the name of the talk(?!)
 
-        switch_scene( $h, undef => $sc->{sceneName} )
-        ->retain;
+        if( $sc->{record} and ( $last_talk != $sc->{talk_info} or !$last_scene->{record} )) {
+            push @actions, "Starting recording";
+            $f = $f->then(sub {
+                $h->send_message( $h->protocol->StartRecording())
+            });
+        };
+        $f = $f->then( sub {
+            switch_scene( $h, undef => $sc->{sceneName} )
+        });
+        push @actions, "Switching from '$last_scene->{sceneName}' to '$sc->{sceneName}'";
     };
-    print_events($action, \@events, $ts);
 
-    # setup_talk($h, 'Text.NextTalk', $sc->{talk_info}->{title});
+    $f->retain;
+
+    @actions = 'idle'
+        unless @actions;
+    my $action = join ",", @actions;
+    print_events($action, \@events, $ts);
 
     $last_talk = $sc->{talk_info};
     $last_scene = $sc;
