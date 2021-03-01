@@ -17,19 +17,28 @@ use File::ChangeNotify;
 use Text::Table;
 use Term::Output::List;
 use Carp 'croak';
+use Time::Piece; # for strptime
 
 our $VERSION = '0.01';
 
 GetOptions(
     'u=s' => \my $url,
     'p=s' => \my $password,
-    'offset|o=s' => \my $offset,
+    #'offset|o=s' => \my $offset, # the offset to shift the whole schedule by
+    'start-from=s' => \my $schedule_time, # the point in time to start in the schedule
     'schedule|s=s' => \my $schedule,
 ) or pod2usage(2);
 
 $url //= 'ws://localhost:4444';
 $schedule //= 'schedule.xml';
-$offset //= 0;
+#$offset //= 0;
+
+if( $schedule_time ) {
+    $schedule_time = Time::Piece->strptime($schedule_time, '%Y-%m-%dT%H:%M:%S%z');
+} else {
+    $schedule_time = Time::Piece->new();
+};
+my $time_adjust = Time::Piece->new() - $schedule_time;
 
 # watch input file (XML?)
 # reload database on file change
@@ -214,7 +223,7 @@ sub expand_schedule( @schedule ) {
     my @res;
     # We spring into action right now. Maybe we should limit ourselves
     # to five minutes before the first event?
-    my $start_time = time();
+    my $start_time = time() - $time_adjust;
     my $end_time = $schedule[-1]->{date} + $schedule[-1]->{slot_duration};
 
     my $last_scene = {
@@ -264,7 +273,6 @@ sub expand_schedule( @schedule ) {
 }
 
 my @events = expand_schedule(read_schedule_xml( $schedule ));
-
 for my $ev (@events) {
     if( ! defined $ev->{duration}) {
         die Dumper \@events;
@@ -377,9 +385,13 @@ sub switch_scene( $obs, $old_scene, $new_scene ) {
 
 my $last_talk = 0;
 my $last_scene = 0;
-Mojo::IOLoop->recurring(1, sub {
-    my $ts = time();
 
+if( $time_adjust ) {
+    warn "Adjusting schedule by $time_adjust seconds";
+};
+
+Mojo::IOLoop->recurring(1, sub {
+    my $ts = time() - $time_adjust;
     my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @events]->[0];
     my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @events]->[0];
 
