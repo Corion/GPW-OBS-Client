@@ -17,6 +17,7 @@ use File::ChangeNotify;
 use Text::Table;
 use Term::Output::List;
 use Carp 'croak';
+use XML::Twig;
 use Time::Piece; # for strptime
 
 our $VERSION = '0.01';
@@ -77,17 +78,48 @@ sub get_video_info( $filename ) {
     # Query OBS for the video duration
 }
 
+sub time_to_seconds( $time ) {
+    $time =~ m!^(?:(\d\d):)?(\d\d):(\d\d)$!
+        or croak "Invalid time: '$time'";
+    return ($1 // 0)*3600+$2*60+$3
+}
+
 sub read_schedule_xml( $schedule ) {
-    # ...
+    my $twig = XML::Twig->new();
+    my $s = $twig->parsefile( $schedule )->simplify; # sluuurp
     my $start = time + 15;
-    return (
-        { title => 'Welcome to GPW 2021', date => $start,                         slot_duration =>  6, speaker => 'Max', scene => 'Orga-Screenshare (obs.ninja)' },
-        { title => 'Pause', date => $start+6, slot_duration =>  6, speaker => '-', scene => 'Pausenbild' },
-        { title => 'First talk',          date => $start+12, talk_duration => 13, slot_duration => 30, speaker => 'Max',
-                                          file =>  '2021-02-02 18-21-42.mp4' },
-        { title => 'Second talk',         date => $start+50, talk_duration => 17, slot_duration => 30, speaker => 'Max',
-                                          file => '2020-06-23 16-17-26-tcpic-personal-weather-app-max-maischein.mp4' },
-    );
+    # Maybe we should always renormalize the schedule to the current time?
+    # Or have an offset-fudge so we can start late?
+
+    my @talks = map { my $r = $_; map { +{ id => $_, %{$r->{event}->{$_}} } } keys %{ $r->{event}} }
+                map { values %{ $_->{room}} }
+                @{ $s->{day} };
+
+    for my $t (@talks) {
+        $t->{date} =~ s!\+(\d\d):!+$1!;
+        $t->{date} = Time::Piece->strptime( $t->{date},'%Y-%m-%dT%H:%M:%S%z' )->epoch;
+        $t->{speaker} = join ", ", sort { $a cmp $b } map { $_->{content} } values %{ $t->{persons}->{person}};
+        $t->{slot_duration} = time_to_seconds( $t->{duration} );
+
+        if( $t->{video} ) {
+            # Load video into OBS
+            # Get the video length
+            $t->{talk_duration} = 13;
+        } else {
+            # this is likely a live talk
+            # We don't know how to autostart the Q&A, oh well ...
+            $t->{scene} = 'Orga-Screenshare (obs.ninja)';
+        }
+    };
+    #return (
+    #    { title => 'Welcome to GPW 2021', date => $start,                         slot_duration =>  6, speaker => 'Max', scene => 'Orga-Screenshare (obs.ninja)' },
+    #    { title => 'Pause', date => $start+6, slot_duration =>  6, speaker => '-', scene => 'Pausenbild' },
+    #    { title => 'First talk',          date => $start+12, talk_duration => 13, slot_duration => 30, speaker => 'Max',
+    #                                      file =>  '2021-02-02 18-21-42.mp4' },
+    #    { title => 'Second talk',         date => $start+50, talk_duration => 17, slot_duration => 30, speaker => 'Max',
+    #                                      file => '2020-06-23 16-17-26-tcpic-personal-weather-app-max-maischein.mp4' },
+    #);
+    return @talks;
 }
 
 sub scene_for_talk( $scene, $talk, $date=undef, $duration=undef ) {
@@ -183,7 +215,7 @@ sub current_scene( $events, $ts=time) {
         $current_scene = scene_for_talk( $sc, $nextSlot, $start+$ofs, abs($ofs) );
 
     # We have a fixed scene
-    } elsif( $currentSlot->{scene} ) {
+    } elsif( $currentSlot->{scene} and $current_presentation_end_time <= $ts and $ts < $current_talk_end_time) {
         $current_scene = scene_for_talk( $currentSlot->{scene}, $currentSlot, $currentSlot->{date}, $currentSlot->{slot_duration});
 
     # Maybe the QA session is running
