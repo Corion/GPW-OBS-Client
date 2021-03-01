@@ -72,30 +72,30 @@ sub read_schedule_xml( $schedule ) {
     # ...
     my $start = time + 15;
     return (
-        { title => 'Welcome to GPW 2021', start => $start,                         slot_duration =>  6, speaker => 'Max', scene => 'Orga-Screenshare (obs.ninja)' },
-        { title => 'Pause', start => $start+6, slot_duration =>  6, speaker => '-', scene => 'Pausenbild' },
-        { title => 'First talk',          start => $start+12, talk_duration => 13, slot_duration => 30, speaker => 'Max',
+        { title => 'Welcome to GPW 2021', date => $start,                         slot_duration =>  6, speaker => 'Max', scene => 'Orga-Screenshare (obs.ninja)' },
+        { title => 'Pause', date => $start+6, slot_duration =>  6, speaker => '-', scene => 'Pausenbild' },
+        { title => 'First talk',          date => $start+12, talk_duration => 13, slot_duration => 30, speaker => 'Max',
                                           file =>  '2021-02-02 18-21-42.mp4' },
-        { title => 'Second talk',         start => $start+50, talk_duration => 17, slot_duration => 30, speaker => 'Max',
+        { title => 'Second talk',         date => $start+50, talk_duration => 17, slot_duration => 30, speaker => 'Max',
                                           file => '2020-06-23 16-17-26-tcpic-personal-weather-app-max-maischein.mp4' },
     );
 }
 
-sub scene_for_talk( $scene, $talk, $start=undef, $duration=undef ) {
+sub scene_for_talk( $scene, $talk, $date=undef, $duration=undef ) {
     my $info = $allScenes{ $scene }
         or croak "Unknown scene '$scene'";
 
     if( $talk ) {
         use Data::Dumper;
-        croak Dumper $talk unless defined $talk->{start};
-        $start //= $talk->{start}+($info->{start_offset}//0);
+        croak Dumper $talk unless defined $talk->{date};
+        $date //= $talk->{date}+($info->{start_offset}//0);
     };
 
     $duration //= $info->{duration};
     if( ! defined $duration ) {
         if( $talk ) {
-            my $end = $talk->{start};
-            $duration = $end - $start;
+            my $end = $talk->{date};
+            $duration = $end - $date;
         } else {
             $duration = 10000;
         };
@@ -104,25 +104,25 @@ sub scene_for_talk( $scene, $talk, $start=undef, $duration=undef ) {
     return +{
         %$info,
         talk_info => $talk,
-        start => $start,
+        date      => $date,
         duration => $duration,
     };
 }
 
 sub current_scene( $events, $ts=time) {
-    my $currentSlot = [grep {$ts >= $_->{start} and $ts <= $_->{start} + $_->{slot_duration} } @$events]->[0];
-    my $nextSlot = [grep {$ts < $_->{start}} @$events]->[0];
+    my $currentSlot = [grep {$ts >= $_->{date} and $ts <= $_->{date} + $_->{slot_duration} } @$events]->[0];
+    my $nextSlot = [grep {$ts < $_->{date}} @$events]->[0];
 
     my $current_presentation_end_time;
     my $current_talk_end_time;
     my $has_QA;
     my $has_Announce;
     if( $currentSlot ) {
-        $current_presentation_end_time = $currentSlot->{start} + ($currentSlot->{talk_duration} // 0);
+        $current_presentation_end_time = $currentSlot->{date} + ($currentSlot->{talk_duration} // 0);
         $has_QA = ! exists $currentSlot->{scene};
         $has_Announce = (!$currentSlot->{scene} or $currentSlot->{scene} ne 'Orga-Screenshare (obs.ninja)');
 
-        $current_talk_end_time = $currentSlot->{start} + ($currentSlot->{talk_duration} // $currentSlot->{slot_duration});
+        $current_talk_end_time = $currentSlot->{date} + ($currentSlot->{talk_duration} // $currentSlot->{slot_duration});
         if( $has_QA ) {
             $current_talk_end_time += $allScenes{"Q&A"}->{duration};
         };
@@ -140,8 +140,8 @@ sub current_scene( $events, $ts=time) {
             my @upcoming_scenes = sort { $a->{start_offset} <=> $b->{start_offset} }
                                   grep { ($_->{start_offset} // 0) < 0 }
                                   values %allScenes;
-            $sc = (grep {     $ts - $nextSlot->{start} > $_->{start_offset}
-                          and $ts < $nextSlot->{start}
+            $sc = (grep {     $ts - $nextSlot->{date} > $_->{start_offset}
+                          and $ts < $nextSlot->{date}
                           and ($has_Announce || ($_->{sceneName} ne 'Anmoderation'))
                         } @upcoming_scenes)[-1];
             if( $sc ) {
@@ -158,7 +158,7 @@ sub current_scene( $events, $ts=time) {
         # Copy the scene
         my( $start, $ofs );
         if( $nextSlot ) {
-            $start = $nextSlot->{start};
+            $start = $nextSlot->{date};
             $ofs = $allScenes{$sc}->{start_offset} // 0;
 
         } else {
@@ -168,14 +168,14 @@ sub current_scene( $events, $ts=time) {
 
         if( $sc eq 'Pausenbild' ) {
             $start = $ts -1;
-            $ofs = $nextSlot->{start} - $ts;
+            $ofs = $nextSlot->{date} - $ts;
         };
 
         $current_scene = scene_for_talk( $sc, $nextSlot, $start+$ofs, abs($ofs) );
 
     # We have a fixed scene
     } elsif( $currentSlot->{scene} ) {
-        $current_scene = scene_for_talk( $currentSlot->{scene}, $currentSlot, $currentSlot->{start}, $currentSlot->{slot_duration});
+        $current_scene = scene_for_talk( $currentSlot->{scene}, $currentSlot, $currentSlot->{date}, $currentSlot->{slot_duration});
 
     # Maybe the QA session is running
     } elsif( $has_QA and $current_presentation_end_time <= $ts and $ts < $current_talk_end_time ) {
@@ -184,19 +184,19 @@ sub current_scene( $events, $ts=time) {
         $current_scene = scene_for_talk( 'Q&A', $currentSlot, $current_presentation_end_time, $allScenes{'Q&A'}->{duration});
 
     # Vortrag im Vollbild
-    } elsif(     $currentSlot->{start} + $allScenes{'Vortrag.Vollbild'}->{start_offset} < $ts
+    } elsif(     $currentSlot->{date} + $allScenes{'Vortrag.Vollbild'}->{start_offset} < $ts
              and $ts < $current_presentation_end_time ) {
         # Plain scene
         $current_scene = scene_for_talk( 'Vortrag.Vollbild', $currentSlot,
-                                         $currentSlot->{start} + ($allScenes{'Vortrag.Vollbild'}->{start_offset}//0),
+                                         $currentSlot->{date} + ($allScenes{'Vortrag.Vollbild'}->{start_offset}//0),
                                          ($currentSlot->{talk_duration}//$currentSlot->{slot_duration}) - ($allScenes{'Vortrag.Vollbild'}->{start_offset} ));
     # Vortrag mit Rahmen
-    } elsif( $currentSlot->{start} <= $ts and $ts <= $currentSlot->{start} + $allScenes{'Vortrag.Vollbild'}->{start_offset}) {
+    } elsif( $currentSlot->{date} <= $ts and $ts <= $currentSlot->{date} + $allScenes{'Vortrag.Vollbild'}->{start_offset}) {
         $current_scene = scene_for_talk( 'Vortrag', $currentSlot,
-                                         $currentSlot->{start},
+                                         $currentSlot->{date},
                                          );
     } elsif( $nextSlot ) {
-        $current_scene = scene_for_talk( 'Pausenbild', $nextSlot, $ts, $nextSlot->{start} - $ts );
+        $current_scene = scene_for_talk( 'Pausenbild', $nextSlot, $ts, $nextSlot->{date} - $ts );
     } else {
         $current_scene = scene_for_talk( 'Ende', undef, $ts, $ts+10000 );
     };
@@ -209,13 +209,13 @@ sub expand_schedule( @schedule ) {
     # Retrieve video playlength (if any)
 
     # Make sure the schedule is sorted by start time
-    @schedule = sort { $a->{start} <=> $b->{start} } @schedule;
+    @schedule = sort { $a->{date} <=> $b->{date} } @schedule;
 
     my @res;
     # We spring into action right now. Maybe we should limit ourselves
     # to five minutes before the first event?
     my $start_time = time();
-    my $end_time = $schedule[-1]->{start} + $schedule[-1]->{slot_duration};
+    my $end_time = $schedule[-1]->{date} + $schedule[-1]->{slot_duration};
 
     my $last_scene = {
         sceneName => '',
@@ -240,8 +240,8 @@ sub expand_schedule( @schedule ) {
 
         if( !@res or $different_scene) {
             if( my $prev_scene = $res[-1] ) {
-                if( $scene->{start} < $prev_scene->{start}+$prev_scene->{duration}) {
-                    my $d = $scene->{start} - $prev_scene->{start};
+                if( $scene->{date} < $prev_scene->{date}+$prev_scene->{duration}) {
+                    my $d = $scene->{date} - $prev_scene->{date};
                     #warn "$scene->{sceneName} overlaps $prev_scene->{sceneName} ($d)";
                     if( $d > 0 ) {
                         $prev_scene->{duration} = $d;
@@ -275,7 +275,7 @@ my $output_quotes = Term::Output::List->new();
 sub print_events( $action, $events, $ts=time ) {
     # i, hh:mm, scene, title, time to start/running, time left
 
-    my $curr = [grep { $_->{start} <= $ts && $ts < $_->{start} + $_->{duration} } @$events]->[0];
+    my $curr = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
     if( ! $curr ) {
         use Data::Dumper;
         warn $ts;
@@ -289,21 +289,21 @@ sub print_events( $action, $events, $ts=time ) {
         # We may have multiple scenes being "current", this is inconvenient
         # Also, the separate "announce" scenes need to be distinguishable
 
-        my $start = strftime "%H:%M:%S", localtime $_->{start};
+        my $start = strftime "%H:%M:%S", localtime $_->{date};
         my $remaining = 0;
         my $running = 0;
 
-        if( $ts < $_->{start} ) {
+        if( $ts < $_->{date} ) {
             # This talk/event is pending
-            $running = $_->{start} - $ts;
+            $running = $_->{date} - $ts;
             $running = strftime "-%H:%M:%S", gmtime $running;
             $remaining = strftime ' %H:%M:%S', gmtime $_->{duration};
 
-        } elsif( $ts < $_->{start} + $_->{duration} ) {
-            $running = $ts - $_->{start};
+        } elsif( $ts < $_->{date} + $_->{duration} ) {
+            $running = $ts - $_->{date};
             $running = strftime " %H:%M:%S", gmtime $running;
 
-            $remaining = strftime ' %H:%M:%S', gmtime $_->{start} + $_->{duration} - $ts;
+            $remaining = strftime ' %H:%M:%S', gmtime $_->{date} + $_->{duration} - $ts;
         } else {
             $running = ' --:--:--';
             $remaining = ' --:--:--';
@@ -380,8 +380,8 @@ my $last_scene = 0;
 Mojo::IOLoop->recurring(1, sub {
     my $ts = time();
 
-    my $sc = [grep { $_->{start} <= $ts && $ts < $_->{start} + $_->{duration} } @events]->[0];
-    my $next_sc = [grep { $sc->{start}+$sc->{duration} < $_->{start} } @events]->[0];
+    my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @events]->[0];
+    my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @events]->[0];
 
     my @actions;
     # Set up all the information
