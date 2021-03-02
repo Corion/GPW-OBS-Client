@@ -73,7 +73,9 @@ my @talkScenes = (qw(
 
 my @schedule = ();
 
-sub get_video_info( $filename ) {
+my $obs = Mojo::OBS::Client->new;
+
+sub get_video_info( $obs, $filename ) {
     # Load the file into OBS
     # Query OBS for the video duration
 }
@@ -82,6 +84,11 @@ sub time_to_seconds( $time ) {
     $time =~ m!^(?:(\d\d):)?(\d\d):(\d\d)$!
         or croak "Invalid time: '$time'";
     return ($1 // 0)*3600+$2*60+$3
+}
+
+sub ffmpeg_read_media_duration( $file ) {
+    my ($t) = grep { /Duration: (\d\d:\d\d:\d\d)\.\d+, start/ } `ffmpeg -i "$file" 2>&1`;
+    return time_to_seconds( $t )
 }
 
 sub read_schedule_xml( $schedule ) {
@@ -97,28 +104,35 @@ sub read_schedule_xml( $schedule ) {
 
     for my $t (@talks) {
         $t->{date} =~ s!\+(\d\d):!+$1!;
+        if( !$t->{date}) {
+            use Data::Dumper;
+            die Dumper $t;
+        };
         $t->{date} = Time::Piece->strptime( $t->{date},'%Y-%m-%dT%H:%M:%S%z' )->epoch;
         $t->{speaker} = join ", ", sort { $a cmp $b } map { $_->{content} } values %{ $t->{persons}->{person}};
+        if( $t->{duration} !~ /^(?:\d\d:)?\d\d:\d\d$/) {
+            use Data::Dumper;
+            die "No duration in " . Dumper $t;
+        };
         $t->{slot_duration} = time_to_seconds( $t->{duration} );
 
         if( $t->{video} ) {
-            # Load video into OBS
+            # Ughh - hopefully the video is available locally to where this
+            # script runs so we can fetch the play duration
+
+            # Otherwise, load video into OBS
             # Get the video length
-            $t->{talk_duration} = 13;
+            # But that requires that the OBS connection is already there
+            # $t->{talk_duration} //= ffmpeg_read_media_duration( $t->{video} );
+            $t->{talk_duration} //= $t->{duration};
+            $t->{talk_duration} = time_to_seconds( $t->{talk_duration});
+            warn "Talk duration for $t->{title} is $t->{talk_duration}";
         } else {
             # this is likely a live talk
             # We don't know how to autostart the Q&A, oh well ...
             $t->{scene} = 'Orga-Screenshare (obs.ninja)';
         }
     };
-    #return (
-    #    { title => 'Welcome to GPW 2021', date => $start,                         slot_duration =>  6, speaker => 'Max', scene => 'Orga-Screenshare (obs.ninja)' },
-    #    { title => 'Pause', date => $start+6, slot_duration =>  6, speaker => '-', scene => 'Pausenbild' },
-    #    { title => 'First talk',          date => $start+12, talk_duration => 13, slot_duration => 30, speaker => 'Max',
-    #                                      file =>  '2021-02-02 18-21-42.mp4' },
-    #    { title => 'Second talk',         date => $start+50, talk_duration => 17, slot_duration => 30, speaker => 'Max',
-    #                                      file => '2020-06-23 16-17-26-tcpic-personal-weather-app-max-maischein.mp4' },
-    #);
     return @talks;
 }
 
@@ -304,13 +318,6 @@ sub expand_schedule( @schedule ) {
     return @res
 }
 
-my @events = expand_schedule(read_schedule_xml( $schedule ));
-for my $ev (@events) {
-    if( ! defined $ev->{duration}) {
-        die Dumper \@events;
-    };
-};
-
 my $output_quotes = Term::Output::List->new();
 sub print_events( $action, $events, $ts=time ) {
     # i, hh:mm, scene, title, time to start/running, time left
@@ -376,9 +383,7 @@ sub print_events( $action, $events, $ts=time ) {
     $output_quotes->output_list(@output, $action//'');
 }
 
-my $h = Mojo::OBS::Client->new;
-
-sub login( $url, $password ) {
+sub login( $h, $url, $password ) {
 
     return $h->connect($url)->then(sub {
         $h->send_message($h->protocol->GetVersion());
@@ -396,12 +401,12 @@ sub setup_talk( $obs, %info ) {
 
     my @text = grep { /^Text\./ } keys %info;
     my @f = map {
-        $obs->send_message($h->protocol->SetTextFreetype2Properties( source => $_,text => $info{ $_ }))
+        $obs->send_message($obs->protocol->SetTextFreetype2Properties( source => $_,text => $info{ $_ }))
     } (@text);
 
     my @video = grep { /^VLC\./ } keys %info;
     push @f, map {
-        $h->send_message($h->protocol->SetSourceSettings( sourceName => $_, sourceType => 'vlc_source',
+        $obs->send_message($obs->protocol->SetSourceSettings( sourceName => $_, sourceType => 'vlc_source',
                          sourceSettings => {
                                 'playlist' => [
                                                 {
@@ -436,10 +441,10 @@ if( $time_adjust ) {
     warn "Adjusting schedule by $time_adjust seconds";
 };
 
-Mojo::IOLoop->recurring(1, sub {
-    my $ts = time() - $time_adjust;
-    my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @events]->[0];
-    my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @events]->[0];
+sub timer_callback( $h, $events, $ts=time() ) {
+    $ts -= $time_adjust;
+    my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
+    my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @$events]->[0];
 
     my @actions;
     # Set up all the information
@@ -490,16 +495,30 @@ Mojo::IOLoop->recurring(1, sub {
     @actions = 'idle'
         unless @actions;
     my $action = join ",", @actions;
-    print_events($action, \@events, $ts);
+    print_events($action, $events, $ts);
 
     $last_talk = $sc->{talk_info};
     $last_scene = $sc;
-});
+}
 
-login( $url, $password )->then( sub {
-    $h->send_message($h->protocol->GetCurrentScene())
+login( $obs, $url, $password )->then( sub {
+    $obs->send_message($obs->protocol->GetCurrentScene())
 })->then(sub( $info ) {
     $last_scene = $info
+})->then(sub {
+    eval {
+    my @events = expand_schedule(read_schedule_xml( $schedule ));
+    for my $ev (@events) {
+        if( ! defined $ev->{duration}) {
+            die Dumper \@events;
+        };
+    };
+
+    Mojo::IOLoop->recurring(1, sub { timer_callback( $obs, \@events ) });
+    };
+    warn $@ if $@;
+
+    Future->done;
 })->retain;
 
 Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
