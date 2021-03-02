@@ -325,7 +325,7 @@ sub print_events( $action, $events, $ts=time ) {
     my @lines = map {
         my $current =    $_->{talk_info} == $curr->{talk_info}
                       && $_->{sceneName} eq $curr->{sceneName}
-                    ? ">" : " ";
+                    ? ">" : "";
         # We may have multiple scenes being "current", this is inconvenient
         # Also, the separate "announce" scenes need to be distinguishable
 
@@ -355,6 +355,20 @@ sub print_events( $action, $events, $ts=time ) {
 
     my $sceneName = $curr->{sceneName};
     unshift @lines, ['','',$sceneName,'', strftime('%Y-%m-%d %H:%M:%S', localtime )];
+
+    my $curr_idx = 0;
+    for (@lines) {
+        if( $_->[0] ) {
+            last
+        } else {
+            $curr_idx++
+        };
+    };
+
+    if( @lines > 20) {
+        my $start = $curr_idx ? $curr_idx -1 : 0;
+        @lines = splice @lines, $start, 20;
+    };
 
     $tb->load(@lines);
     my @output = split /\r?\n/, $tb;
