@@ -59,6 +59,7 @@ my %module = (
         'POSIX'              => 0,
         'Getopt::Long'       => 0,
         'Pod::Usage'         => 0,
+        'XML::Twig'          => 0,
     },
     TEST_REQUIRES => {
         'Test::More'   => 0,
