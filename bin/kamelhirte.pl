@@ -379,7 +379,7 @@ sub print_events( $action, $events, $ts=time ) {
 
     $tb->load(@lines);
     my @output = split /\r?\n/, $tb;
-    #say for @output;
+    #say for (@output,$action//'');
     $output_quotes->output_list(@output, $action//'');
 }
 
@@ -434,12 +434,12 @@ sub switch_scene( $obs, $old_scene, $new_scene ) {
     });
 }
 
-my $last_talk = 0;
-my $last_scene = 0;
-
 if( $time_adjust ) {
     warn "Adjusting schedule by $time_adjust seconds";
 };
+
+my $last_talk = 0;
+my $last_scene = 0;
 
 sub timer_callback( $h, $events, $ts=time() ) {
     $ts -= $time_adjust;
@@ -463,17 +463,20 @@ sub timer_callback( $h, $events, $ts=time() ) {
             push @video,
                 'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{file};
         };
+        push @actions, sprintf "setting up talk '$sc->{talk_info}->{title}' at %s", strftime '%H:%M', localtime($sc->{talk_info}->{date});
         $f = $f->then(sub {
-        setup_talk( $h,
-            @video,
-            'Text.ThisTalk' => $sc->{talk_info}->{title},
-            'Text.ThisSpeaker' => $sc->{talk_info}->{speaker},
-            'Text.NextTalk' => $sc->{talk_info}->{title},
-            'Text.NextSpeaker' => $sc->{talk_info}->{speaker},
-        )});
+            setup_talk( $h,
+                @video,
+                'Text.ThisTalk'    => $sc->{talk_info}->{title},
+                'Text.ThisSpeaker' => $sc->{talk_info}->{speaker},
+                'Text.NextTalk'    => $sc->{talk_info}->{title},
+                'Text.NextSpeaker' => $sc->{talk_info}->{speaker},
+                'Text.NextTime'    => strftime( '%H:%M', localtime( $sc->{talk_info}->{date} )),
+            )
+        });
     };
 
-    if( !$last_scene or ($last_scene->{sceneName} ne $sc->{sceneName} or $last_talk != $sc->{talk_info})) {
+    if( !$last_scene or ($last_talk != $sc->{talk_info} or $last_scene->{sceneName} ne $sc->{sceneName})) {
 
         # If $sc->{record} goes from 0 to 1, record this
         # (maybe also set the filename to the name of the talk(?!)
