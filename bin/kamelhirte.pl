@@ -175,7 +175,8 @@ sub current_scene( $events, $ts=time) {
     if( $currentSlot ) {
         $current_presentation_end_time = $currentSlot->{date} + ($currentSlot->{talk_duration} // 0);
         $has_QA = ! exists $currentSlot->{scene};
-        $has_Announce = (!$currentSlot->{scene} or $currentSlot->{scene} ne 'Orga-Screenshare (obs.ninja)');
+        $has_Announce = $currentSlot->{announce_file}
+                        || (!$currentSlot->{scene} or $currentSlot->{scene} ne 'Orga-Screenshare (obs.ninja)');
 
         $current_talk_end_time = $currentSlot->{date} + ($currentSlot->{talk_duration} // $currentSlot->{slot_duration});
         if( $has_QA ) {
@@ -183,7 +184,8 @@ sub current_scene( $events, $ts=time) {
         };
     } else {
         $current_talk_end_time = $ts -1;
-        $has_Announce = (!$nextSlot->{scene} or $nextSlot->{scene} ne 'Orga-Screenshare (obs.ninja)');
+        $has_Announce = $nextSlot->{announce_file}
+                        || (!$nextSlot->{scene} or $nextSlot->{scene} ne 'Orga-Screenshare (obs.ninja)');
     };
 
     my $current_scene;
@@ -214,7 +216,17 @@ sub current_scene( $events, $ts=time) {
         my( $start, $ofs );
         if( $nextSlot ) {
             $start = $nextSlot->{date};
-            $ofs = $allScenes{$sc}->{start_offset} // 0;
+
+            # If we have an intro, use that intro length
+            if( $sc eq 'Anmoderation' ) {
+                if( $nextSlot->{intro_duration} ) {
+                    $ofs = -$nextSlot->{intro_duration}
+                } else {
+                    $ofs = $allScenes{$sc}->{start_offset} // 0;
+                };
+            } else {
+                $ofs = $allScenes{$sc}->{start_offset} // 0;
+            };
 
         } else {
             $start = $ts;
