@@ -303,9 +303,13 @@ sub current_scene( $events, $ts=time) {
         if( $sc eq 'Pausenbild' ) {
             $start = $ts -1;
             $ofs = $nextSlot->{date} - $ts;
-        };
+            #warn "Setting Pausenbild offset of $ofs (Pause starts at $start";
+            $current_scene = scene_for_talk( $sc, $nextSlot, $ts, abs($ofs) );
+        } else {
 
-        $current_scene = scene_for_talk( $sc, $nextSlot, $start+$ofs, abs($ofs) );
+            # What do we calculate here???
+            $current_scene = scene_for_talk( $sc, $nextSlot, $start+$ofs, abs($ofs) );
+         };
 
     # We have a fixed scene
     } elsif( $currentSlot->{scene} and $current_presentation_end_time <= $ts and $ts < $current_talk_end_time) {
