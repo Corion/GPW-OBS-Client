@@ -261,19 +261,28 @@ sub current_scene( $events, $ts=time) {
 
         my $sc;
         if( $nextSlot ) {
-            my @upcoming_scenes = sort { $a->{start_offset} <=> $b->{start_offset} }
-                                  grep { ($_->{start_offset} // 0) < 0 }
-                                  values %allScenes;
-            $sc = (grep {     $ts - $nextSlot->{date} > $_->{start_offset}
-                          and $ts < $nextSlot->{date}
-                          and ($has_Announce || ($_->{sceneName} ne 'Anmoderation'))
-                        } @upcoming_scenes)[-1];
+            #my @upcoming_scenes = sort { $a->{start_offset} <=> $b->{start_offset} }
+            #                      grep { ($_->{start_offset} // 0) < 0 }
+            #                      values %allScenes;
+            ##use Data::Dumper; warn Dumper \@upcoming_scenes;
+            ##warn Dumper [grep {     $ts - $nextSlot->{date} > $_->{start_offset}
+            ##              and $ts < $nextSlot->{date}
+            ##              and ($has_Announce || ($_->{sceneName} ne 'Anmoderation'))
+            ##            } @upcoming_scenes];
+            #$sc = (grep {     $ts - $nextSlot->{date} > $_->{start_offset}
+            #              and $ts < $nextSlot->{date}
+            #              and ($has_Announce || ($_->{sceneName} ne 'Anmoderation'))
+            #            } @upcoming_scenes)[-1];
+            if( $has_Announce
+                and $nextSlot->{date} - $nextSlot->{intro_duration} <= $ts
+                and $ts < $nextSlot->{date}) {
+                $sc = $allScenes{ 'Anmoderation' };
+            };
             if( $sc ) {
                 $sc = $sc->{sceneName}
             } else {
                 $sc = "Pausenbild";
             };
-
 
         } else {
             $sc = "Ende";
