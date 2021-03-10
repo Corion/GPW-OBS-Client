@@ -56,7 +56,7 @@ my $time_adjust = Time::Piece->new() - $schedule_time;
 # This should go into a config
 my %allScenes = map { $_->{sceneName} => $_ } (
     { sceneName => 'Pausenbild.hot', start_offset => -120, record => 0, },
-    #{ sceneName => 'Anmoderation', start_offset => -10, record => 1 },
+    { sceneName => 'Anmoderation', start_offset => -10, record => 1 },
     { sceneName => 'Vortrag', start_offset => 0, duration => 6, record => 1 },
     { sceneName => 'Vortrag.Vollbild', start_offset => 6, record => 1 },
     { sceneName => 'Q&A', end_offset => 0, duration => 10, record => 1 },
