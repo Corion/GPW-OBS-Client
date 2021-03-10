@@ -17,7 +17,8 @@ use File::ChangeNotify;
 use Text::Table;
 use Term::Output::List;
 use Carp 'croak';
-use XML::Twig;
+use XML::Twig; # for reading schedule.xml
+use Spreadsheet::Read; # for reading a spreadsheet
 use Time::Piece; # for strptime
 
 our $VERSION = '0.01';
@@ -131,6 +132,72 @@ sub read_schedule_xml( $schedule ) {
             # this is likely a live talk
             # We don't know how to autostart the Q&A, oh well ...
             $t->{scene} = 'Orga-Screenshare (obs.ninja)';
+        }
+    };
+    return @talks;
+}
+
+sub read_schedule_spreadsheet( $schedule ) {
+    #my $workbook = Spreadsheet::Read->new($schedule, cells => 0, trim => 1);
+    my $workbook = Spreadsheet::ParseXLSX->new->parse($schedule);
+    my $s = $workbook->worksheet('Tabelle1');
+    my $start = time + 15;
+    # Maybe we should always renormalize the schedule to the current time?
+    # Or have an offset-fudge so we can start late?
+    my @talks;
+    my ($row_min,$row_max) = $s->row_range;
+    for my $row ($row_min+1..$row_max) {
+        my @r = map { $s->get_cell($row,$_) } 0..10;
+        next if ! defined $r[0] or ! defined $r[3];
+        my %talk = (
+            date           => $r[0]  ? $r[0]->value : undef,
+            duration       => $r[2]  ? $r[2]->value : undef,
+            title          => $r[3]  ? $r[3]->value : undef,
+            speaker        => $r[4]  ? $r[4]->value : undef,
+            video          => $r[5]  ? $r[5]->value : undef,
+            talk_duration  => $r[6]  ? $r[6]->value : undef,
+            intro          => $r[7]  ? $r[7]->value : undef,
+            intro_duration => $r[8]  ? $r[8]->value : undef,
+            q_a_duration   => $r[9]  ? $r[9]->value : undef,
+            scene          => $r[10] ? $r[10]->value : undef,
+        );
+        next if $talk{ title } eq 'Pause';
+        push @talks, \%talk;
+    };
+
+    for my $t (@talks) {
+        $t->{date} =~ s!\+(\d\d):!+$1!;
+        if( !$t->{date}) {
+            use Data::Dumper;
+            die Dumper $t;
+        };
+        $t->{date} = Time::Piece->strptime( "$t->{date}+0100",'%Y-%m-%d %H:%M:%S%z' )->epoch;
+        #$t->{speaker} = join ", ", sort { $a cmp $b } map { $_->{content} } values %{ $t->{persons}->{person}};
+        if( $t->{duration} !~ /^(?:\d\d:)?\d\d:\d\d$/) {
+            use Data::Dumper;
+            die "No duration in " . Dumper $t;
+        };
+        $t->{slot_duration} = time_to_seconds( $t->{duration} );
+
+        if( $t->{intro_duration}) {
+            $t->{intro_duration} = time_to_seconds( $t->{intro_duration} );
+        };
+
+        if( $t->{video} ) {
+            # Ughh - hopefully the video is available locally to where this
+            # script runs so we can fetch the play duration
+
+            # Otherwise, load video into OBS
+            # Get the video length
+            # But that requires that the OBS connection is already there
+            # $t->{talk_duration} //= ffmpeg_read_media_duration( $t->{video} );
+            $t->{talk_duration} //= $t->{duration};
+            $t->{talk_duration} = time_to_seconds( $t->{talk_duration});
+            warn "Talk duration for $t->{title} is $t->{talk_duration}";
+        } else {
+            # this is likely a live talk
+            # We don't know how to autostart the Q&A, oh well ...
+            $t->{scene} //= 'Orga-Screenshare (obs.ninja)';
         }
     };
     return @talks;
@@ -522,7 +589,17 @@ login( $obs, $url, $password )->then( sub {
     $last_scene = $info
 })->then(sub {
     eval {
-    my @events = expand_schedule(read_schedule_xml( $schedule ));
+
+        my @info;
+        if( $schedule =~ /\.xml$/i ) {
+            @info = read_schedule_xml( $schedule );
+        } elsif( $schedule =~ /\.xlsx$/i ) {
+            @info = read_schedule_spreadsheet( $schedule );
+        } else {
+            die "Unknown file format '$schedule'. I know xml and xlsx";
+        };
+        my @events = expand_schedule( @info );
+
     for my $ev (@events) {
         if( ! defined $ev->{duration}) {
             die Dumper \@events;
