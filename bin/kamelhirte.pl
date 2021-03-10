@@ -366,7 +366,6 @@ sub expand_schedule( @schedule ) {
 
         my $different_scene;
         {
-            no warnings 'uninitialized';
             $different_scene = $last_scene
                               && (($last_scene->{sceneName} ne $scene->{sceneName})
                                    || (defined $last_scene->{talk_info} xor defined $scene->{talk_info}))
