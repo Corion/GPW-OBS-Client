@@ -380,23 +380,28 @@ sub expand_schedule( @schedule ) {
             if( my $prev_scene = $res[-1] ) {
                 if( $scene->{date} < $prev_scene->{date}+$prev_scene->{duration}) {
                     my $d = $scene->{date} - $prev_scene->{date};
-                    #warn "$scene->{sceneName} overlaps $prev_scene->{sceneName} ($d)";
-                    if( $d > 0 ) {
+                    warn "$scene->{sceneName} overlaps $prev_scene->{sceneName} ($d)";
+                    if( $d == 0 ) {
+                        pop @res;
+                    } elsif( $d > 0 ) {
                         $prev_scene->{duration} = $d;
                     } else {
-                        pop @res;
+                        $prev_scene->{duration} -= $d;
                     };
                 };
             };
             push @res, $scene;
         };
         $last_scene = $res[-1];
+
+#        if( @res > 3 ) {
+#    use Data::Dumper;
+#    warn Dumper $scene;
+#    warn Dumper \@res;
+#    exit 1;
+#        };
     }
 
-    # Fix up the durations here, in the case we lack any?!
-
-    # Maybe do the overlap elimination here?!
-    # Or shorten pre-talk events?
 
     return @res
 }
