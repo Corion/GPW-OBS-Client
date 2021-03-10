@@ -355,6 +355,7 @@ sub expand_schedule( @schedule ) {
         sceneName => '',
         talk_info => 0,
     };
+    say "Expanding schedule from " . strftime('%Y-%m-%d %H:%M:%S', localtime($start_time));
     for my $ts ($start_time..$end_time) {
         my $scene = current_scene( \@schedule, $ts );
         #$scene->{talk_info} //= 0;
