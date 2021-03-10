@@ -81,7 +81,7 @@ sub get_video_info( $obs, $filename ) {
 }
 
 sub time_to_seconds( $time ) {
-    $time =~ m!^(?:(\d\d):)?(\d\d):(\d\d)$!
+    $time =~ m!^(?:\[?(\d\d)\]?:)?(\d\d):(\d\d)$!
         or croak "Invalid time: '$time'";
     return ($1 // 0)*3600+$2*60+$3
 }
