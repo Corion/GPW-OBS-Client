@@ -22,6 +22,7 @@ use XML::Twig; # for reading schedule.xml
 use Spreadsheet::ParseXLSX; # for reading a spreadsheet
 use Time::Piece; # for strptime
 use Encode 'decode','encode';
+use Text::Unidecode;
 
 our $VERSION = '0.01';
 
@@ -582,9 +583,8 @@ sub scene_changed( $h, $sc, $next_sc ) {
         push @actions, sprintf "setting up talk '$sc->{talk_info}->{title}' at %s", strftime '%H:%M', localtime($sc->{talk_info}->{date});
 
         # OBS doesn't output/ingest UTF-8 here :(
-        #say $sc->{talk_info}->{speaker};
-        my $s = encode('Latin-1', $sc->{talk_info}->{speaker});
-        my $t = encode('Latin-1', $sc->{talk_info}->{title} );
+        my $s = unidecode( $sc->{talk_info}->{speaker});
+        my $t = unidecode( $sc->{talk_info}->{title} );
 
         $f = $f->then(sub {
             setup_talk( $h,
