@@ -49,22 +49,14 @@ my $time_adjust = Time::Piece->new() - $schedule_time;
 
 # watch input file (XML?)
 # reload database on file change
-# scene: pre-announce talk
-# scene: announce talk
-# scene: run talk
-# orga: announce q&a ready
-# scene: run q&a
-# while q&a running:
-#     main channel: announce pause/cut, announce next room(?)
-# scene: switch to pause
 
 # This should go into a config
 my %allScenes = map { $_->{sceneName} => $_ } (
-    { sceneName => 'Pausenbild.hot', start_offset => -120, record => 0, },
-    { sceneName => 'Anmoderation', start_offset => -10, record => 1 },
+    #{ sceneName => 'Pausenbild.hot', start_offset => -120, record => 0, },
+    #{ sceneName => 'Anmoderation', start_offset => -10, record => 1 },
     { sceneName => 'Vortrag', start_offset => 0, duration => 6, record => 1 },
     { sceneName => 'Vortrag.Vollbild', start_offset => 6, record => 1 },
-    { sceneName => 'Q&A', end_offset => 0, duration => 10, record => 1 },
+    { sceneName => 'Q&A (obs.ninja)', end_offset => 0, duration => 10, record => 1 },
 
     { sceneName => 'Orga-Screenshare (obs.ninja)', start_offset => 0, record => 1 },
     { sceneName => 'Pausenbild', end_offset => 0, record => 0 },
@@ -74,8 +66,9 @@ my %allScenes = map { $_->{sceneName} => $_ } (
 my @talkScenes = (qw(
     Vortrag
     Vortrag.Vollbild
-    Q&A
-));
+),
+    'Q&A (obs.ninja)',
+);
 
 my @schedule = ();
 
@@ -136,7 +129,8 @@ sub read_schedule_xml( $schedule ) {
         } else {
             # this is likely a live talk
             # We don't know how to autostart the Q&A, oh well ...
-            $t->{scene} = 'Orga-Screenshare (obs.ninja)';
+            #$t->{scene} = 'Orga-Screenshare (obs.ninja)';
+            $t->{scene} = 'Q&A (obs.ninja)';
         }
     };
     return @talks;
@@ -208,7 +202,7 @@ sub read_schedule_spreadsheet( $schedule ) {
         } else {
             # this is likely a live talk
             # We don't know how to autostart the Q&A, oh well ...
-            $t->{scene} //= 'Orga-Screenshare (obs.ninja)';
+            $t->{scene} //= 'Q&A (obs.ninja)';
         }
     };
     return @talks;
@@ -258,7 +252,7 @@ sub current_scene( $events, $ts=time) {
 
         $current_talk_end_time = $currentSlot->{date} + ($currentSlot->{talk_duration} // $currentSlot->{slot_duration});
         if( $has_QA ) {
-            $current_talk_end_time += $allScenes{"Q&A"}->{duration};
+            $current_talk_end_time += $allScenes{"Q&A (obs.ninja)"}->{duration};
         };
     } else {
         $current_talk_end_time = $ts -1;
@@ -284,11 +278,11 @@ sub current_scene( $events, $ts=time) {
             #              and $ts < $nextSlot->{date}
             #              and ($has_Announce || ($_->{sceneName} ne 'Anmoderation'))
             #            } @upcoming_scenes)[-1];
-            if( $has_Announce
-                and $nextSlot->{date} - $nextSlot->{intro_duration} <= $ts
-                and $ts < $nextSlot->{date}) {
-                $sc = $allScenes{ 'Anmoderation' };
-            };
+            #if( $has_Announce
+            #    and $nextSlot->{date} - $nextSlot->{intro_duration} <= $ts
+            #    and $ts < $nextSlot->{date}) {
+            #    $sc = $allScenes{ 'Anmoderation' };
+            #};
             if( $sc ) {
                 $sc = $sc->{sceneName}
             } else {
@@ -305,15 +299,15 @@ sub current_scene( $events, $ts=time) {
             $start = $nextSlot->{date};
 
             # If we have an intro, use that intro length
-            if( $sc eq 'Anmoderation' ) {
-                if( $nextSlot->{intro_duration} ) {
-                    $ofs = -$nextSlot->{intro_duration}
-                } else {
-                    $ofs = $allScenes{$sc}->{start_offset} // 0;
-                };
-            } else {
+            #if( $sc eq 'Anmoderation' ) {
+            #    if( $nextSlot->{intro_duration} ) {
+            #        $ofs = -$nextSlot->{intro_duration}
+            #    } else {
+            #        $ofs = $allScenes{$sc}->{start_offset} // 0;
+            #    };
+            #} else {
                 $ofs = $allScenes{$sc}->{start_offset} // 0;
-            };
+            #};
 
         } else {
             $start = $ts;
@@ -339,7 +333,7 @@ sub current_scene( $events, $ts=time) {
     } elsif( $has_QA and $current_presentation_end_time <= $ts and $ts < $current_talk_end_time ) {
         # The current video has (likely) ended
         # Q&A has started
-        $current_scene = scene_for_talk( 'Q&A', $currentSlot, $current_presentation_end_time, $allScenes{'Q&A'}->{duration});
+        $current_scene = scene_for_talk( 'Q&A (obs.ninja)', $currentSlot, $current_presentation_end_time, $allScenes{'Q&A (obs.ninja)'}->{duration});
 
     # Vortrag im Vollbild
     } elsif(     $currentSlot->{date} + $allScenes{'Vortrag.Vollbild'}->{start_offset} < $ts
