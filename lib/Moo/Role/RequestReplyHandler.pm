@@ -3,6 +3,7 @@ use Moo::Role;
 use feature 'signatures';
 no warnings 'experimental::signatures';
 use Scalar::Util 'weaken';
+use Moo::Role::RequestReplyHandler::EventListener;
 
 our $VERSION = '0.01';
 
@@ -81,7 +82,7 @@ the return value goes out of scope.
 =cut
 
 sub add_listener( $self, $event, $callback ) {
-    my $listener = RequestReplyHandler::EventListener->new(
+    my $listener = Moo::Role::RequestReplyHandler::EventListener->new(
         target   => $self,
         callback => $callback,
         event    => $event,

@@ -1,4 +1,4 @@
-package Role::RequestReplyHandler::EventListener;
+package Moo::Role::RequestReplyHandler::EventListener;
 use strict;
 use Moo;
 use Carp 'croak';
