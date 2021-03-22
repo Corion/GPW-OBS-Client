@@ -621,6 +621,31 @@ sub timer_callback( $h, $events, $ts=time() ) {
     $last_scene = $sc;
 }
 
+my $scenesSwitched = $obs->add_listener('SwitchScenes', sub($info) {
+    say "New scene: " . $info->{'scene-name'};
+    # Look for browser source in the current scene items
+    my $have_browser;
+    for my $source (@{$info->{sources}}) {
+        if( $source->{type} eq 'browser_source') {
+            say "Browser source is active";
+            $have_browser = 1;
+        };
+    };
+
+    if( $have_browser ) {
+            say "Browser source is active";
+    } else {
+            say "Browser source is inactive";
+    };
+
+    my $mute = !$have_browser ? $JSON::PP::true : $JSON::PP::false;
+
+    my $toggle_browser_sound = $obs->send_message($obs->protocol->SetMute(
+        source => 'Desktop Audio',
+        mute => $mute ));
+    $toggle_browser_sound->retain;
+});
+
 login( $obs, $url, $password )->then( sub {
     $obs->send_message($obs->protocol->GetCurrentScene())
 })->then(sub( $info ) {
