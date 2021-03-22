@@ -31,6 +31,7 @@ GetOptions(
     #'offset|o=s' => \my $offset, # the offset to shift the whole schedule by
     'start-from=s' => \my $schedule_time, # the point in time to start in the schedule
     'schedule|s=s' => \my $schedule,
+    'log'          => \my $log_output,
 ) or pod2usage(2);
 
 $url //= 'ws://localhost:4444';
@@ -490,8 +491,11 @@ sub print_events( $action, $events, $ts=time ) {
 
     $tb->load(@lines);
     my @output = split /\r?\n/, $tb;
-    #say for (@output,$action//'');
-    $output_quotes->output_list(@output, $action//'');
+    if( $log_output ) {
+        say for (@output,$action//'');
+    } else {
+        $output_quotes->output_list(@output, $action//'');
+    };
 }
 
 sub login( $h, $url, $password ) {
