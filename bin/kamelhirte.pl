@@ -364,7 +364,7 @@ sub current_scene( $events, $ts=time) {
 };
 
 sub pause_until( $nextSlot, $ts ) {
-    scene_for_talk( 'Pausenbild', $nextSlot, $ts, $nextSlot->{date} - $ts );
+    scene_for_talk( 'Pausenbild', $nextSlot->{talk_info}, $ts, $nextSlot->{date} - $ts );
 }
 
 sub expand_schedule( @schedule ) {
@@ -568,7 +568,7 @@ sub scene_changed( $h, $sc, $next_sc ) {
     my $f = Future->done;
 
     if( $last_talk != $sc->{talk_info}) {
-        say "$last_talk != $sc->{talk_info} ($last_talk->{title} -> $sc->{talk_info}->{title})";
+        #say "$last_talk != $sc->{talk_info} ($last_talk->{title} -> $sc->{talk_info}->{title})";
         # if we changed the talk, stop recording
         push @actions, "Stopping recording";
         $f = $f->then(sub {
@@ -628,8 +628,23 @@ sub timer_callback( $h, $events, $ts=time() ) {
     my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
     my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @$events]->[0];
 
-    my( $f, @actions ) = scene_changed($h, $sc, $next_sc);
-    $f->retain;
+    # Check here if we are in Q&A and the next slot is Pausenbild
+    # and the next slot is more than 30 seconds away
+    # If so, shorten the Pause, elongate the current Q&A and continue
+
+    my @actions;
+    if( $last_talk != $sc->{talk_info}
+        and $sc->{sceneName} eq 'Pausenbild'
+        and $sc->{date} + $sc->{duration} - $ts > 60) {
+            $last_scene->{duration} += 30;
+            $sc->{date} += 30;
+            $sc->{duration} -= 30;
+        # Yell about running over ...
+        push @actions, 'running over time, switch manually to "Pausenbild" to stop';
+    } else {
+        (my( $f ), @actions ) = scene_changed($h, $sc, $next_sc);
+        $f->retain;
+    };
 
     @actions = 'idle'
         unless @actions;
@@ -686,6 +701,7 @@ my $pauseClicked = $obs->add_listener('SwitchScenes', sub($info) {
 
             # Splice the manual pause event in:
             my $manual_pause = pause_until( $next_sc, $ts );
+
             my $i = 0;
             $i++ while $events[$i] != $sc;
             splice @events, $i+1, 0, $manual_pause;
