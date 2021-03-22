@@ -18,8 +18,10 @@ use Text::Table;
 use Term::Output::List;
 use Carp 'croak';
 use XML::Twig; # for reading schedule.xml
-use Spreadsheet::Read; # for reading a spreadsheet
+#use Spreadsheet::Read; # for reading a spreadsheet
+use Spreadsheet::ParseXLSX; # for reading a spreadsheet
 use Time::Piece; # for strptime
+use Encode 'decode','encode';
 
 our $VERSION = '0.01';
 
@@ -34,6 +36,8 @@ GetOptions(
 $url //= 'ws://localhost:4444';
 $schedule //= 'schedule.xml';
 #$offset //= 0;
+
+binmode STDOUT, ':utf8';
 
 if( $schedule_time ) {
     $schedule_time = Time::Piece->strptime($schedule_time, '%Y-%m-%dT%H:%M:%S%z');
@@ -94,11 +98,10 @@ sub ffmpeg_read_media_duration( $file ) {
 
 sub read_schedule_xml( $schedule ) {
     my $twig = XML::Twig->new();
-    my $s = $twig->parsefile( $schedule )->simplify; # sluuurp
+    my $s = $twig->parsefile( $schedule )->simplify( forcearray => [qw[day room]] ); # sluuurp
     my $start = time + 15;
     # Maybe we should always renormalize the schedule to the current time?
     # Or have an offset-fudge so we can start late?
-
     my @talks = map { my $r = $_; map { +{ id => $_, %{$r->{event}->{$_}} } } keys %{ $r->{event}} }
                 map { values %{ $_->{room}} }
                 @{ $s->{day} };
@@ -117,6 +120,7 @@ sub read_schedule_xml( $schedule ) {
         };
         $t->{slot_duration} = time_to_seconds( $t->{duration} );
 
+# Also, $t->{intro_duration}
         if( $t->{video} ) {
             # Ughh - hopefully the video is available locally to where this
             # script runs so we can fetch the play duration
@@ -161,6 +165,12 @@ sub read_schedule_spreadsheet( $schedule ) {
             q_a_duration   => $r[9]  ? $r[9]->value : undef,
             scene          => $r[10] ? $r[10]->value : undef,
         );
+
+        #$talk{ speaker } = decode('Latin-1', $talk{speaker});
+        #$talk{ title } = decode('Latin-1', $talk{title});
+        $talk{ speaker } = encode('Latin-1', $talk{speaker});
+        $talk{ title }   = encode('Latin-1', $talk{title});
+
         next if $talk{ title } eq 'Pause';
         push @talks, \%talk;
     };
@@ -368,9 +378,11 @@ sub expand_schedule( @schedule ) {
         sceneName => '',
         talk_info => 0,
     };
+
     say "Expanding schedule from " . strftime('%Y-%m-%d %H:%M:%S', localtime($start_time));
     for my $ts ($start_time..$end_time) {
         my $scene = current_scene( \@schedule, $ts );
+        #say sprintf "%s %s %s", strftime( "%Y-%m-%d %H:%M:%S", localtime($ts)), $scene->{sceneName}, $scene->{talk_info}->{title};
         #$scene->{talk_info} //= 0;
         if( ! $scene->{sceneName}) {
             use Data::Dumper;
@@ -423,8 +435,10 @@ sub print_events( $action, $events, $ts=time ) {
     if( ! $curr ) {
         use Data::Dumper;
         warn $ts;
+        warn strftime('%Y-%m-%d %H:%M:%S', localtime($ts));
         warn Dumper $events;
-        die "No current event?!";
+        warn "No current event?!";
+        exit;
     };
     my @lines = map {
         my $current =    $_->{talk_info} == $curr->{talk_info}
@@ -452,13 +466,13 @@ sub print_events( $action, $events, $ts=time ) {
             $running = ' --:--:--';
             $remaining = ' --:--:--';
         };
-        [ $current, $start, $_->{sceneName}, $_->{talk_info}->{title}, $running, $remaining],
+        [ $current, $start, $_->{sceneName}, $_->{talk_info}->{title}, $running, $remaining, $_->{record}],
     } @$events;
 
-    my $tb = Text::Table->new({},{},{},{},{align=>'right'},{align=>'right'});
+    my $tb = Text::Table->new({},{},{},{},{align=>'right'},{align=>'right'},{});
 
     my $sceneName = $curr->{sceneName};
-    unshift @lines, ['','',$sceneName,'', strftime('%Y-%m-%d %H:%M:%S', localtime )];
+    unshift @lines, ['','',$sceneName,'', strftime('%Y-%m-%d %H:%M:%S', localtime ),''];
 
     my $curr_idx = 0;
     for (@lines) {
@@ -561,13 +575,19 @@ sub timer_callback( $h, $events, $ts=time() ) {
                 'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{file};
         };
         push @actions, sprintf "setting up talk '$sc->{talk_info}->{title}' at %s", strftime '%H:%M', localtime($sc->{talk_info}->{date});
+
+        # OBS doesn't ingest UTF-8 here?!
+        say $sc->{talk_info}->{speaker};
+        my $s = encode('Latin-1', $sc->{talk_info}->{speaker});
+        my $t = encode('Latin-1', $sc->{talk_info}->{title} );
+
         $f = $f->then(sub {
             setup_talk( $h,
                 @video,
-                'Text.ThisTalk'    => $sc->{talk_info}->{title},
-                'Text.ThisSpeaker' => $sc->{talk_info}->{speaker},
-                'Text.NextTalk'    => $sc->{talk_info}->{title},
-                'Text.NextSpeaker' => $sc->{talk_info}->{speaker},
+                'Text.ThisTalk'    => $t,
+                'Text.ThisSpeaker' => $s,
+                'Text.NextTalk'    => $t,
+                'Text.NextSpeaker' => $s,
                 'Text.NextTime'    => strftime( '%H:%M', localtime( $sc->{talk_info}->{date} )),
             )
         });
@@ -635,3 +655,4 @@ Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
 
 # * Show local time instead of simulated time for next event (?!)
 # * Eliminate bad/negative offsets
+# * Handle umlauts in names and titles (?!)
