@@ -70,6 +70,13 @@ sub Authenticate($self,$password,$saltMsg) {
     return $self->nextMessage($payload)
 }
 
+sub GetTextFreetype2Properties($self,%properties) {
+    return $self->nextMessage({
+        'request-type' => 'GetTextFreetype2Properties',
+        %properties,
+    })
+};
+
 sub SetTextFreetype2Properties($self,%properties) {
     return $self->nextMessage({
         'request-type' => 'SetTextFreetype2Properties',
@@ -91,6 +98,12 @@ sub SetSourceSettings($self,%sourceInfo) {
     })
 };
 
+sub GetMediaSourcesList($self) {
+    return $self->nextMessage({
+        'request-type' => 'GetMediaSourcesList',
+    })
+}
+
 sub GetMediaDuration($self, $sourceName) {
     return $self->nextMessage({
         'request-type' => 'GetMediaDuration',
@@ -102,6 +115,13 @@ sub GetMediaTime($self, $sourceName) {
     return $self->nextMessage({
         'request-type' => 'GetMediaTime',
         sourceName => $sourceName,
+    })
+}
+
+sub GetMediaState($self, $sourceName) {
+    return $self->nextMessage({
+        'request-type' => 'GetMediaState',
+        'sourceName' => $sourceName,
     })
 }
 
@@ -143,4 +163,10 @@ sub StopRecording($self) {
     })
 }
 
+sub SetMute($self,%sourceInfo) {
+    return $self->nextMessage({
+        'request-type' => 'SetMute',
+        %sourceInfo,
+    })
+};
 1;
