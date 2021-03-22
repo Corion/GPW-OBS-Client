@@ -742,5 +742,3 @@ login( $obs, $url, $password )->then( sub {
 Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
 
 # * Show local time instead of simulated time for next event (?!)
-# * Eliminate bad/negative offsets
-# * Handle umlauts in names and titles (?!)
