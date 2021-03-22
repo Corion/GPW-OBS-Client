@@ -114,10 +114,11 @@ sub read_schedule_xml( $schedule ) {
         if( $t->{duration} !~ /^(?:\d\d:)?\d\d:\d\d$/) {
             use Data::Dumper;
             die "No duration in " . Dumper $t;
+        } elsif ( $t->{duration} =~ /^\d\d:\d\d$/ ) {
+            $t->{duration} = "$t->{duration}:00";
         };
         $t->{slot_duration} = time_to_seconds( $t->{duration} );
 
-# Also, $t->{intro_duration}
         if( $t->{video} ) {
             # Ughh - hopefully the video is available locally to where this
             # script runs so we can fetch the play duration
@@ -129,6 +130,8 @@ sub read_schedule_xml( $schedule ) {
             $t->{talk_duration} //= $t->{duration};
             $t->{talk_duration} = time_to_seconds( $t->{talk_duration});
             warn "Talk duration for $t->{title} is $t->{talk_duration}";
+        } elsif( $t->{scene} ) {
+            # Predefined scene
         } else {
             # this is likely a live talk
             # We don't know how to autostart the Q&A, oh well ...
