@@ -356,6 +356,10 @@ sub current_scene( $events, $ts=time) {
     return $current_scene
 };
 
+sub pause_until( $nextSlot, $ts ) {
+    scene_for_talk( 'Pausenbild', $nextSlot, $ts, $nextSlot->{date} - $ts );
+}
+
 sub expand_schedule( @schedule ) {
 
     # Retrieve video playlength (if any)
@@ -547,20 +551,17 @@ if( $time_adjust ) {
     warn "Adjusting schedule by $time_adjust seconds";
 };
 
-my $last_talk = 0;
-my $last_scene = 0;
+my $last_talk = {};
+my $last_scene = {};
 
-sub timer_callback( $h, $events, $ts=time() ) {
-    $ts -= $time_adjust;
-    my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
-    my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @$events]->[0];
-
+sub scene_changed( $h, $sc, $next_sc ) {
     my @actions;
     # Set up all the information
 
     my $f = Future->done;
 
     if( $last_talk != $sc->{talk_info}) {
+        say "$last_talk != $sc->{talk_info} ($last_talk->{title} -> $sc->{talk_info}->{title})";
         # if we changed the talk, stop recording
         push @actions, "Stopping recording";
         $f = $f->then(sub {
@@ -574,8 +575,8 @@ sub timer_callback( $h, $events, $ts=time() ) {
         };
         push @actions, sprintf "setting up talk '$sc->{talk_info}->{title}' at %s", strftime '%H:%M', localtime($sc->{talk_info}->{date});
 
-        # OBS doesn't ingest UTF-8 here?!
-        say $sc->{talk_info}->{speaker};
+        # OBS doesn't output/ingest UTF-8 here :(
+        #say $sc->{talk_info}->{speaker};
         my $s = encode('Latin-1', $sc->{talk_info}->{speaker});
         my $t = encode('Latin-1', $sc->{talk_info}->{title} );
 
@@ -602,39 +603,52 @@ sub timer_callback( $h, $events, $ts=time() ) {
                 $h->send_message( $h->protocol->StartRecording())
             });
         };
-        $f = $f->then( sub {
-            switch_scene( $h, undef => $sc->{sceneName} )
-        });
-        push @actions, "Switching from '$last_scene->{sceneName}' to '$sc->{sceneName}'";
-    };
 
+        if( $last_scene->{sceneName} ne $sc->{sceneName}) {
+            $f = $f->then( sub {
+                switch_scene( $h, undef => $sc->{sceneName} )
+            });
+            push @actions, "Switching from '$last_scene->{sceneName}' to '$sc->{sceneName}'";
+        };
+    };
+    $last_talk = $sc->{talk_info};
+    $last_scene = $sc;
+
+    return $f, @actions
+};
+
+sub timer_callback( $h, $events, $ts=time() ) {
+    $ts -= $time_adjust;
+    my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
+    my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @$events]->[0];
+
+    my( $f, @actions ) = scene_changed($h, $sc, $next_sc);
     $f->retain;
 
     @actions = 'idle'
         unless @actions;
     my $action = join ",", @actions;
     print_events($action, $events, $ts);
-
-    $last_talk = $sc->{talk_info};
-    $last_scene = $sc;
 }
 
+# Mute the Desktop audio source whenever no browser is visible
 my $scenesSwitched = $obs->add_listener('SwitchScenes', sub($info) {
-    say "New scene: " . $info->{'scene-name'};
+    #say "New scene: " . $info->{'scene-name'};
     # Look for browser source in the current scene items
+
     my $have_browser;
     for my $source (@{$info->{sources}}) {
         if( $source->{type} eq 'browser_source') {
-            say "Browser source is active";
+            #say "Browser source is active";
             $have_browser = 1;
         };
     };
 
-    if( $have_browser ) {
-            say "Browser source is active";
-    } else {
-            say "Browser source is inactive";
-    };
+    #if( $have_browser ) {
+    #        say "Browser source is active";
+    #} else {
+    #        say "Browser source is inactive";
+    #};
 
     my $mute = !$have_browser ? $JSON::PP::true : $JSON::PP::false;
 
@@ -642,6 +656,35 @@ my $scenesSwitched = $obs->add_listener('SwitchScenes', sub($info) {
         source => 'Desktop Audio',
         mute => $mute ));
     $toggle_browser_sound->retain;
+});
+
+my @events;
+
+my $pauseClicked = $obs->add_listener('SwitchScenes', sub($info) {
+    if( $info->{'scene-name'} eq 'Pausenbild' ) {
+        # Somebody clicked "Pause", or the script switched to the Pause scene
+        my $ts = time() - $time_adjust;
+
+        my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @events]->[0];
+        my $next_sc = [grep { $_->{date} > $ts } @events]->[0];
+
+        if( $sc and $sc->{sceneName} ne 'Pausenbild' ) {
+            # We actually switched away from a planned scene, so somebody
+            # clicked the "Pause" scene:
+
+            say "You switched away from $sc->{talk_info}->{title}";
+            say "Next up is $next_sc->{talk_info}->{title}";
+
+            # Cut the current scene short:
+            $sc->{duration} = $ts - $sc->{date};
+
+            # Splice the manual pause event in:
+            my $manual_pause = pause_until( $next_sc, $ts );
+            my $i = 0;
+            $i++ while $events[$i] != $sc;
+            splice @events, $i+1, 0, $manual_pause;
+        };
+    };
 });
 
 login( $obs, $url, $password )->then( sub {
@@ -659,15 +702,15 @@ login( $obs, $url, $password )->then( sub {
         } else {
             die "Unknown file format '$schedule'. I know xml and xlsx";
         };
-        my @events = expand_schedule( @info );
+        @events = expand_schedule( @info );
 
-    for my $ev (@events) {
-        if( ! defined $ev->{duration}) {
-            die Dumper \@events;
+        for my $ev (@events) {
+            if( ! defined $ev->{duration}) {
+                die Dumper \@events;
+            };
         };
-    };
 
-    Mojo::IOLoop->recurring(1, sub { timer_callback( $obs, \@events ) });
+        Mojo::IOLoop->recurring(1, sub { timer_callback( $obs, \@events ) });
     };
     warn $@ if $@;
 
