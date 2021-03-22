@@ -102,6 +102,9 @@ sub read_schedule_xml( $schedule ) {
 
     for my $t (@talks) {
         $t->{date} =~ s!\+(\d\d):!+$1!;
+        if( $t->{date} =~ m!^(20\d\d-\d\d-\d\d) (\d\d:\d\d:\d\d)$! ) {
+            $t->{date} = "${1}T$2+0100";
+        };
         if( !$t->{date}) {
             use Data::Dumper;
             die Dumper $t;
