@@ -23,6 +23,7 @@ use Spreadsheet::ParseXLSX; # for reading a spreadsheet
 use Time::Piece; # for strptime
 use Encode 'decode','encode';
 use Text::Unidecode;
+use YAML 'LoadFile';
 
 our $VERSION = '0.01';
 
@@ -32,12 +33,22 @@ GetOptions(
     #'offset|o=s' => \my $offset, # the offset to shift the whole schedule by
     'start-from=s' => \my $schedule_time, # the point in time to start in the schedule
     'schedule|s=s' => \my $schedule,
+    'video-config|c=s' => \my $video_config_file,
     'log'          => \my $log_output,
 ) or pod2usage(2);
 
 $url //= 'ws://localhost:4444';
 $schedule //= 'schedule.xml';
 #$offset //= 0;
+
+my $video_config;
+if( $video_config_file ) {
+    $video_config = LoadFile( $video_config_file );
+} else {
+    $video_config = {
+        events => [],
+    };
+};
 
 binmode STDOUT, ':utf8';
 
@@ -91,6 +102,11 @@ sub ffmpeg_read_media_duration( $file ) {
     return time_to_seconds( $t )
 }
 
+sub video_info( $id ) {
+    (my $ev) = grep { $_->{id} == $id } @{ $video_config->{events} };
+    return $ev
+}
+
 sub read_schedule_xml( $schedule ) {
     my $twig = XML::Twig->new();
     my $s = $twig->parsefile( $schedule )->simplify( forcearray => [qw[day room]] ); # sluuurp
@@ -120,7 +136,27 @@ sub read_schedule_xml( $schedule ) {
         };
         $t->{slot_duration} = time_to_seconds( $t->{duration} );
 
-        if( $t->{video} ) {
+        my $info = video_info( $t->{id} );
+
+        if( $info ) {
+            if( $info->{talk_duration }) {
+                $t->{talk_duration} = $info->{talk_duration};
+                $t->{talk_duration} = time_to_seconds( $t->{talk_duration});
+                if( ! $info->{scene} ) {
+                    delete $t->{scene};
+                };
+            };
+
+            if( $info->{intro_file}) {
+                $t->{intro_file} = $info->{intro_file};
+                $t->{talk_duration} += time_to_seconds( $info->{intro_duration})
+            };
+
+            if( $info->{scene} ) {
+                $t->{scene} = $info->{scene};
+            };
+
+        } elsif( $t->{video} ) {
             # Ughh - hopefully the video is available locally to where this
             # script runs so we can fetch the play duration
 
@@ -130,7 +166,12 @@ sub read_schedule_xml( $schedule ) {
             # $t->{talk_duration} //= ffmpeg_read_media_duration( $t->{video} );
             $t->{talk_duration} //= $t->{duration};
             $t->{talk_duration} = time_to_seconds( $t->{talk_duration});
-            warn "Talk duration for $t->{title} is $t->{talk_duration}";
+
+            if( $t->{intro_file}) {
+                $t->{talk_duration} += time_to_seconds( $t->{intro_duration})
+            };
+
+            #warn "Talk duration for $t->{title} is $t->{talk_duration}";
         } elsif( $t->{scene} ) {
             # Predefined scene
         } else {
@@ -260,6 +301,7 @@ sub current_scene( $events, $ts=time) {
         $current_talk_end_time = $currentSlot->{date} + ($currentSlot->{talk_duration} // $currentSlot->{slot_duration});
         if( $has_QA ) {
             $current_talk_end_time += $allScenes{"Q&A (obs.ninja)"}->{duration};
+            # Well, make the Q&A fit up to the next talk, at most...
         };
     } else {
         $current_talk_end_time = $ts -1;
@@ -576,6 +618,10 @@ sub scene_changed( $h, $sc, $next_sc ) {
         });
 
         my @video;
+        if( $sc->{talk_info}->{intro_file} ) {
+            push @video,
+                'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{intro_file};
+        };
         if( $sc->{talk_info}->{file} ) {
             push @video,
                 'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{file};
