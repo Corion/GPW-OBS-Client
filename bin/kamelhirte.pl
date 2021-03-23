@@ -495,7 +495,7 @@ sub print_events( $action, $events, $ts=time ) {
         # We may have multiple scenes being "current", this is inconvenient
         # Also, the separate "announce" scenes need to be distinguishable
 
-        my $start = strftime "%H:%M:%S", localtime $_->{date};
+        my $start = strftime "%H:%M:%S", localtime ($_->{date});
         my $remaining = 0;
         my $running = 0;
 
@@ -584,15 +584,19 @@ sub setup_talk( $obs, %info ) {
 }
 
 sub switch_scene( $obs, $old_scene, $new_scene ) {
-    return $obs->send_message($obs->protocol->GetCurrentScene())
-    ->then(sub( $info ) {
+    #return $obs->send_message($obs->protocol->GetCurrentScene())
+    #->then(sub( $info ) {
         #if( $info->{name} eq $old_scene ) {
             #warn "Switching from '$info->{name}' to '$new_scene'";
-            return $obs->send_message($obs->protocol->SetCurrentScene($new_scene))
+    return $obs->send_message($obs->protocol->SetCurrentScene($new_scene))
         #} else {
         #    warn "Weird/unexpected scene '$info->{name}', not switching to '$new_scene'";
         #    return Future->done(0)
         #}
+    #})
+    ->catch(sub {
+        warn Dumper \@_;
+        exit;
     });
 }
 
