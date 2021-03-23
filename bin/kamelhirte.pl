@@ -569,20 +569,27 @@ sub setup_talk( $obs, %info ) {
     } (@text);
 
     my @video = grep { /^VLC\./ } keys %info;
+
     push @f, map {
+        my $videos = $info{ $_ };
+        if(! ref $videos ) {
+            $videos = [ $videos ];
+        };
+        my @videofiles = map {
+                                +{
+                                  'value' => $_,
+                                  'hidden' => $JSON::PP::false,
+                                  'selected' => $JSON::PP::false,
+                                }
+                             } @$videos;
+
         $obs->send_message($obs->protocol->SetSourceSettings( sourceName => $_, sourceType => 'vlc_source',
                          sourceSettings => {
-                                'playlist' => [
-                                                {
-                                                  'value' => $info{$_},
-                                                  'hidden' => $JSON::false,
-                                                  'selected' => $JSON::false,
-                                                }
-                                              ]
+                                'playlist' => \@videofiles
                                           }))
     } @video;
 
-    return Future->wait_all( @f );
+    return Future->wait_all( @f )->catch(sub { use Data::Dumper; warn Dumper \@_; exit });
 }
 
 sub switch_scene( $obs, $old_scene, $new_scene ) {
@@ -625,14 +632,15 @@ sub scene_changed( $h, $sc, $next_sc ) {
 
         my @video;
         if( $sc->{talk_info}->{intro_filename} ) {
-            push @video,
-                'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{intro_file};
+            push @video, '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{intro_filename};
         };
         if( $sc->{talk_info}->{video} ) {
-            push @video,
-                'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{file};
+            push @video, '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{video};
         };
         push @actions, sprintf "setting up talk '$sc->{talk_info}->{title}' at %s", strftime '%H:%M', localtime($sc->{talk_info}->{date});
+        #use Data::Dumper;
+        #warn Dumper \@video;
+        #exit;
 
         # OBS doesn't output/ingest UTF-8 here :(
         my $s = unidecode( $sc->{talk_info}->{speaker});
@@ -640,9 +648,7 @@ sub scene_changed( $h, $sc, $next_sc ) {
 
         $f = $f->then(sub {
             setup_talk( $h,
-                @video,
-                'Text.ThisTalk'    => $t,
-                'Text.ThisSpeaker' => $s,
+                'VLC.Vortrag' => \@video,
                 'Text.NextTalk'    => $t,
                 'Text.NextSpeaker' => $s,
                 'Text.NextTime'    => strftime( '%H:%M', localtime( $sc->{talk_info}->{date} )),
