@@ -141,6 +141,7 @@ sub read_schedule_xml( $schedule ) {
 
         if( $info ) {
             if( $info->{talk_duration }) {
+                $t->{video} = $info->{talk_filename};
                 $t->{talk_duration} = $info->{talk_duration};
                 $t->{talk_duration} = time_to_seconds( $t->{talk_duration});
                 if( ! $info->{scene} ) {
@@ -148,8 +149,8 @@ sub read_schedule_xml( $schedule ) {
                 };
             };
 
-            if( $info->{intro_file}) {
-                $t->{intro_file} = $info->{intro_file};
+            if( $info->{intro_filename}) {
+                $t->{intro_filename} = $info->{intro_filename};
                 $t->{talk_duration} += time_to_seconds( $info->{intro_duration})
             };
 
@@ -168,7 +169,7 @@ sub read_schedule_xml( $schedule ) {
             $t->{talk_duration} //= $t->{duration};
             $t->{talk_duration} = time_to_seconds( $t->{talk_duration});
 
-            if( $t->{intro_file}) {
+            if( $t->{intro_filename}) {
                 $t->{talk_duration} += time_to_seconds( $t->{intro_duration})
             };
 
@@ -623,11 +624,11 @@ sub scene_changed( $h, $sc, $next_sc ) {
         });
 
         my @video;
-        if( $sc->{talk_info}->{intro_file} ) {
+        if( $sc->{talk_info}->{intro_filename} ) {
             push @video,
                 'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{intro_file};
         };
-        if( $sc->{talk_info}->{file} ) {
+        if( $sc->{talk_info}->{video} ) {
             push @video,
                 'VLC.Vortrag' => '/home/gpw/gpw2021-talks/' . $sc->{talk_info}->{file};
         };
