@@ -1,6 +1,7 @@
 #!perl
 use strict;
 use warnings;
+use 5.020;
 use Filter::signatures;
 use feature 'signatures';
 no warnings 'experimental::signatures';
@@ -36,10 +37,9 @@ my $l = $h->add_listener('StreamStatus' => sub( $status ) {
 });
 
 use Data::Dumper;
-Mojo::IOLoop->recurring(5 => sub {
+Mojo::IOLoop->recurring(1 => sub {
     my $scene;
     my $duration;
-    my $timestamp;
     $h->send_message($h->protocol->GetCurrentScene())->then(sub($reply) {
         $scene = $reply->{"name"};
         Future->done();
@@ -52,16 +52,20 @@ Mojo::IOLoop->recurring(5 => sub {
         $h->send_message($h->protocol->GetMediaTime('VLC.Vortrag'))
     })->then(sub($reply) {
 
-        if( $scene eq 'Vortrag' ) {
-            $timestamp = $reply->{timestamp};
+        #if( $scene eq 'Vortrag' ) {
+            my $timestamp = $reply->{timestamp};
+            my $ts = $timestamp / 1000;
 
             my $left = ($duration - $timestamp)/1000;
 
-            warn sprintf 'Duration: %d ms   Current time: %d ms, time left: %s',
-            $duration,
-            $timestamp,
-            strftime '%H:%M:%S left', gmtime($left);
-        };
+            my $total     = strftime "%H:%M:%S", gmtime ($duration / 1000);
+            my $running   = strftime "%H:%M:%S", gmtime $ts;
+            my $remaining = strftime ' %H:%M:%S', gmtime $left;
+
+            $| = 1;
+            print join "\t", $running, $remaining, $total;
+            print "\r";
+        #};
 
         Future->done();
     })->retain;
