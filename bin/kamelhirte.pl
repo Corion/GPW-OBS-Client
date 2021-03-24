@@ -633,7 +633,7 @@ if( $time_adjust ) {
     warn "Adjusting schedule by $time_adjust seconds";
 };
 
-my $last_talk = {};
+my $last_talk = 0;
 my $last_scene = {};
 
 sub scene_changed( $h, $sc ) {
@@ -696,6 +696,10 @@ sub scene_changed( $h, $sc ) {
         };
     };
     $last_talk = $sc->{talk_info};
+
+    die Dumper $sc
+        unless $sc->{talk_info};
+
     $last_scene = $sc;
 
     return $f, @actions
@@ -711,7 +715,8 @@ sub timer_callback( $h, $events, $ts=time() ) {
     # If so, shorten the Pause, elongate the current Q&A and continue
 
     my @actions;
-    if( $last_talk != $sc->{talk_info}
+    if( ref $last_talk
+        and $last_talk != $sc->{talk_info}
         and $sc->{sceneName} eq 'Pausenbild'
         and $sc->{date} + $sc->{duration} - $ts > 60) {
             $last_scene->{duration} += 30;
@@ -720,7 +725,7 @@ sub timer_callback( $h, $events, $ts=time() ) {
         # Yell about running over ...
         push @actions, 'running over time, switch manually to "Pausenbild" to stop';
     } else {
-        (my( $f ), @actions ) = scene_changed($h, $sc, $next_sc);
+        (my( $f ), @actions ) = scene_changed($h, $sc);
         $f->retain;
     };
 
