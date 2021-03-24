@@ -280,9 +280,17 @@ sub scene_for_talk( $scene, $talk, $date=undef, $duration=undef ) {
     };
 }
 
+sub get_current_event( $events, $ts=time ) {
+    [grep {$ts >= $_->{date} and $ts <= $_->{date} + $_->{slot_duration} } @$events]->[0]
+}
+
+sub get_next_event( $events, $ts=time) {
+    [grep {$ts < $_->{date}} @$events]->[0]
+}
+
 sub current_scene( $events, $ts=time) {
-    my $currentSlot = [grep {$ts >= $_->{date} and $ts <= $_->{date} + $_->{slot_duration} } @$events]->[0];
-    my $nextSlot = [grep {$ts < $_->{date}} @$events]->[0];
+    my $currentSlot = get_current_event( $events, $ts );
+    my $nextSlot = get_next_event( $events, $ts );
 
     my $current_presentation_end_time;
     my $current_talk_end_time;
@@ -476,12 +484,14 @@ my $output_quotes = Term::Output::List->new();
 sub print_events( $action, $events, $ts=time ) {
     # i, hh:mm, scene, title, time to start/running, time left
 
-    my $curr = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
+    #my $curr = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
+    my $curr = get_current_event( $events, $ts );
     if( ! $curr ) {
+
         use Data::Dumper;
+        warn Dumper $events;
         warn $ts;
         warn strftime('%Y-%m-%d %H:%M:%S', localtime($ts));
-        warn Dumper $events;
         warn "No current event?!";
         exit;
     };
@@ -678,8 +688,10 @@ sub scene_changed( $h, $sc, $next_sc ) {
 
 sub timer_callback( $h, $events, $ts=time() ) {
     $ts -= $time_adjust;
-    my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
-    my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @$events]->[0];
+    #my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
+    my $sc = get_current_event( $events, $ts );
+    #my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @$events]->[0];
+    my $next_sc = get_next_event( $events, $ts );
 
     # Check here if we are in Q&A and the next slot is Pausenbild
     # and the next slot is more than 30 seconds away
@@ -739,8 +751,10 @@ my $pauseClicked = $obs->add_listener('SwitchScenes', sub($info) {
         # Somebody clicked "Pause", or the script switched to the Pause scene
         my $ts = time() - $time_adjust;
 
-        my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @events]->[0];
-        my $next_sc = [grep { $_->{date} > $ts } @events]->[0];
+        #my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @events]->[0];
+        #my $next_sc = [grep { $_->{date} > $ts } @events]->[0];
+        my $sc = get_current_event( \@events, $ts );
+        my $next_sc = get_next_event( \@events, $ts );
 
         if( $sc and $sc->{sceneName} ne 'Pausenbild' ) {
             # We actually switched away from a planned scene, so somebody
