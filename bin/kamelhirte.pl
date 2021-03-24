@@ -36,7 +36,10 @@ GetOptions(
     'schedule|s=s' => \my $schedule,
     'video-config|c=s' => \my $video_config_file,
     'log'          => \my $log_output,
+    'dry-run|n'    => \my $dryrun,
 ) or pod2usage(2);
+
+my %only_ids = map { $_ => $_ } @ARGV;
 
 $url //= 'ws://localhost:4444';
 $schedule //= 'schedule.xml';
@@ -86,7 +89,11 @@ my @talkScenes = (qw(
 
 my @schedule = ();
 
-my $obs = Mojo::OBS::Client->new;
+my $obs;
+
+if( ! $dryrun ) {
+    $obs = Mojo::OBS::Client->new;
+};
 
 sub time_to_seconds( $time ) {
     $time =~ m!^(?:\[?(\d\d)\]?:)?(\d\d):(\d\d)$!
@@ -113,6 +120,10 @@ sub read_schedule_xml( $schedule ) {
     my @talks = map { my $r = $_; map { +{ id => $_, %{$r->{event}->{$_}} } } keys %{ $r->{event}} }
                 map { values %{ $_->{room}} }
                 @{ $s->{day} };
+
+    if( scalar keys %only_ids ) {
+        @talks = grep { exists $only_ids{ $_->{id}} } @talks;
+    };
 
     for my $t (@talks) {
         $t->{date} =~ s!\+(\d\d):!+$1!;
@@ -304,6 +315,7 @@ sub current_scene( $events, $ts=time) {
     if( $currentSlot ) {
         $current_presentation_end_time = $currentSlot->{date} + ($currentSlot->{talk_duration} // 0);
         $has_QA = ! exists $currentSlot->{scene};
+
         $has_Announce = $currentSlot->{announce_file}
                         || (!$currentSlot->{scene} or $currentSlot->{scene} ne 'Orga-Screenshare (obs.ninja)');
 
@@ -735,8 +747,10 @@ sub timer_callback( $h, $events, $ts=time() ) {
     print_events($action, $events, $ts);
 }
 
+my @events;
+
 # Mute the Desktop audio source whenever no browser is visible
-my $scenesSwitched = $obs->add_listener('SwitchScenes', sub($info) {
+sub onScenesSwitched($info) {
     #say "New scene: " . $info->{'scene-name'};
     # Look for browser source in the current scene items
 
@@ -760,11 +774,9 @@ my $scenesSwitched = $obs->add_listener('SwitchScenes', sub($info) {
         source => 'Desktop Audio',
         mute => $mute ));
     $toggle_browser_sound->retain;
-});
+};
 
-my @events;
-
-my $pauseClicked = $obs->add_listener('SwitchScenes', sub($info) {
+sub onPauseClicked( $info ) {
     if( $info->{'scene-name'} eq 'Pausenbild' ) {
         # Somebody clicked "Pause", or the script switched to the Pause scene
         my $ts = time() - $time_adjust;
@@ -792,15 +804,16 @@ my $pauseClicked = $obs->add_listener('SwitchScenes', sub($info) {
             splice @events, $i+1, 0, $manual_pause;
         };
     };
-});
+}
 
-login( $obs, $url, $password )->then( sub {
-    $obs->send_message($obs->protocol->GetCurrentScene())
-})->then(sub( $info ) {
-    $last_scene = $info
-})->then(sub {
-    eval {
+my $scenesSwitched;
+my $pauseClicked;
+if( ! $dryrun ) {
+    $scenesSwitched = $obs->add_listener('SwitchScenes', \&onScenesSwitched);
+    $pauseClicked = $obs->add_listener('SwitchScenes', \&onPauseClicked);
+};
 
+sub read_events( $schedule ) {
         my @info;
         if( $schedule =~ /\.xml$/i ) {
             @info = read_schedule_xml( $schedule );
@@ -809,21 +822,40 @@ login( $obs, $url, $password )->then( sub {
         } else {
             die "Unknown file format '$schedule'. I know xml and xlsx";
         };
-        @events = expand_schedule( @info );
+        my @events = expand_schedule( @info );
 
         for my $ev (@events) {
             if( ! defined $ev->{duration}) {
                 die Dumper \@events;
             };
         };
+        return @events;
+}
 
-        Mojo::IOLoop->recurring(1, sub { timer_callback( $obs, \@events ) });
-    };
-    warn $@ if $@;
+my $logged_in;
+if( $dryrun ) {
+    @events  = read_events( $schedule );
 
-    Future->done;
-})->retain;
+} else {
+    $logged_in = login( $obs, $url, $password )->then( sub {
+        $obs->send_message($obs->protocol->GetCurrentScene())
+    })->then(sub( $info ) {
+        $last_scene = $info
+    })->then(sub {
+        eval {
 
-Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
+            @events = read_events( $schedule );
+
+            Mojo::IOLoop->recurring(1, sub { timer_callback( $obs, \@events ) });
+        };
+        warn $@ if $@;
+
+        Future->done;
+    })->retain;
+    Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
+};
+
 
 # * Show local time instead of simulated time for next event (?!)
+# * Replace Q & A by "ohne Regie (obs.ninja)"
+# * Replace Lightning Talks by "mit Regie (obs.ninja)"
