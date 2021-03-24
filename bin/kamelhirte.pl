@@ -425,7 +425,6 @@ sub pause_until( $nextSlot, $ts ) {
     if( ! $nextSlot->{talk_info} ) {
         croak "No talk in " . Dumper $nextSlot;
     };
-    warn "$nextSlot->{date}  $ts";
     return scene_for_talk( 'Pausenbild', $nextSlot->{talk_info}, $ts, $nextSlot->{date} - $ts );
 }
 
