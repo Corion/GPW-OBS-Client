@@ -703,10 +703,8 @@ sub scene_changed( $h, $sc ) {
 
 sub timer_callback( $h, $events, $ts=time() ) {
     $ts -= $time_adjust;
-    #my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
-    my $sc = get_current_event( $events, $ts );
-    #my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @$events]->[0];
-    my $next_sc = get_next_event( $events, $ts );
+    my $sc = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
+    my $next_sc = [grep { $sc->{date}+$sc->{duration} < $_->{date} } @$events]->[0];
 
     # Check here if we are in Q&A and the next slot is Pausenbild
     # and the next slot is more than 30 seconds away
