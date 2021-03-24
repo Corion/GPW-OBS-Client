@@ -370,10 +370,16 @@ sub current_scene( $events, $ts=time) {
         };
 
         if( $sc eq 'Pausenbild' ) {
-            $start = $ts -1;
-            $ofs = $nextSlot->{date} - $ts;
-            #warn "Setting Pausenbild offset of $ofs (Pause starts at $start";
-            $current_scene = scene_for_talk( $sc, $nextSlot, $ts, abs($ofs) );
+            #$start = $ts -1;
+            #$ofs = $nextSlot->{date} - $ts;
+            ##warn "Setting Pausenbild offset of $ofs (Pause starts at $start";
+            #$current_scene = scene_for_talk( $sc, $nextSlot, $ts, abs($ofs) );
+            if( ! $nextSlot ) {
+                warn "Have no next slot but want to Pause?!";
+                exit;
+            };
+            #warn "Creating pausenbild for $nextSlot->{title}";
+            $current_scene = pause_until( { date => $nextSlot->{date}, talk_info => $nextSlot }, $ts );
         } else {
 
             # What do we calculate here???
