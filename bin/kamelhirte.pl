@@ -149,6 +149,10 @@ sub read_schedule_xml( $schedule ) {
                 $t->{talk_duration} += time_to_seconds( $info->{intro_duration})
             };
 
+            if( $info->{q_a_duration}) {
+                $t->{q_a_duration} = $info->{q_a_duration};
+            };
+
             if( $info->{scene} ) {
                 $t->{scene} = $info->{scene};
             };
@@ -237,16 +241,11 @@ sub read_schedule_spreadsheet( $schedule ) {
             # Ughh - hopefully the video is available locally to where this
             # script runs so we can fetch the play duration
 
-            # Otherwise, load video into OBS
-            # Get the video length
-            # But that requires that the OBS connection is already there
-            # $t->{talk_duration} //= ffmpeg_read_media_duration( $t->{video} );
             $t->{talk_duration} //= $t->{duration};
             $t->{talk_duration} = time_to_seconds( $t->{talk_duration});
             warn "Talk duration for $t->{title} is $t->{talk_duration}";
         } else {
             # this is likely a live talk
-            # We don't know how to autostart the Q&A, oh well ...
             $t->{scene} //= 'Q&A (obs.ninja)';
         }
     };
@@ -297,7 +296,8 @@ sub current_scene( $events, $ts=time) {
 
         $current_talk_end_time = $currentSlot->{date} + ($currentSlot->{talk_duration} // $currentSlot->{slot_duration});
         if( $has_QA ) {
-            $current_talk_end_time += $allScenes{"Q&A (obs.ninja)"}->{duration};
+            my $d = $currentSlot->{q_a_duration} // $allScenes{"Q&A (obs.ninja)"}->{duration};
+            $current_talk_end_time += $d;
             # Well, make the Q&A fit up to the next talk, at most...
         };
     } else {
