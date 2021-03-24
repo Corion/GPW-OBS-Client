@@ -491,13 +491,14 @@ my $output_quotes = Term::Output::List->new();
 sub print_events( $action, $events, $ts=time ) {
     # i, hh:mm, scene, title, time to start/running, time left
 
-    #my $curr = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
-    my $curr = get_current_event( $events, $ts );
+    my $curr = [grep { $_->{date} <= $ts && $ts < $_->{date} + $_->{duration} } @$events]->[0];
     if( ! $curr ) {
 
         use Data::Dumper;
-        warn Dumper $events;
-        warn $ts;
+        warn Dumper $events->[0];
+        warn "Now:  ", $ts;
+        warn "Next: ", $events->[0]->{date};
+        warn "Diff: ", $events->[0]->{date} - $ts;
         warn strftime('%Y-%m-%d %H:%M:%S', localtime($ts));
         warn "No current event?!";
         exit;
