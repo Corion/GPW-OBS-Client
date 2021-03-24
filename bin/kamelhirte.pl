@@ -87,11 +87,6 @@ my @schedule = ();
 
 my $obs = Mojo::OBS::Client->new;
 
-sub get_video_info( $obs, $filename ) {
-    # Load the file into OBS
-    # Query OBS for the video duration
-}
-
 sub time_to_seconds( $time ) {
     $time =~ m!^(?:\[?(\d\d)\]?:)?(\d\d):(\d\d)$!
         or croak "Invalid time: '$time'";
