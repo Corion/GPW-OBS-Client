@@ -24,6 +24,7 @@ use Time::Piece; # for strptime
 use Encode 'decode','encode';
 use Text::Unidecode;
 use YAML 'LoadFile';
+use Data::Dumper;
 
 our $VERSION = '0.01';
 
