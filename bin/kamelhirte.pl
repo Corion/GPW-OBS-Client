@@ -282,7 +282,7 @@ sub scene_for_talk( $scene, $talk, $date=undef, $duration=undef ) {
 }
 
 sub get_current_event( $events, $ts=time ) {
-    [grep {$ts >= $_->{date} and $ts <= $_->{date} + $_->{slot_duration} } @$events]->[0]
+    [grep {$_->{date} <= $ts and $ts <= $_->{date} + $_->{slot_duration} } @$events]->[0]
 }
 
 sub get_next_event( $events, $ts=time) {
