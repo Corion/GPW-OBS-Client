@@ -637,7 +637,7 @@ if( $time_adjust ) {
 my $last_talk = {};
 my $last_scene = {};
 
-sub scene_changed( $h, $sc, $next_sc ) {
+sub scene_changed( $h, $sc ) {
     my @actions;
     # Set up all the information
 
