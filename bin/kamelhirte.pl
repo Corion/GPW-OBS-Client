@@ -263,6 +263,10 @@ sub scene_for_talk( $scene, $talk, $date=undef, $duration=undef ) {
         $date //= $talk->{date}+($info->{start_offset}//0);
     };
 
+    if( exists $talk->{talk_info} ) {
+        croak "Type error: Passed in scene instead of talk";
+    };
+
     $duration //= $info->{duration};
     if( ! defined $duration ) {
         if( $talk ) {
@@ -418,7 +422,11 @@ sub current_scene( $events, $ts=time) {
 };
 
 sub pause_until( $nextSlot, $ts ) {
-    scene_for_talk( 'Pausenbild', $nextSlot->{talk_info}, $ts, $nextSlot->{date} - $ts );
+    if( ! $nextSlot->{talk_info} ) {
+        croak "No talk in " . Dumper $nextSlot;
+    };
+    warn "$nextSlot->{date}  $ts";
+    return scene_for_talk( 'Pausenbild', $nextSlot->{talk_info}, $ts, $nextSlot->{date} - $ts );
 }
 
 sub expand_schedule( @schedule ) {
