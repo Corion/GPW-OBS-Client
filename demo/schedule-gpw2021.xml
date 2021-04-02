@@ -1,0 +1,514 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<schedule>
+    <generator name='gpw_schedule.pl' version='1.0'></generator>
+    <version>mkdir</version>
+    <conference>
+        <acronym>gpw2021</acronym>
+        <title>German Perl-/Raku-Workshop 2021</title>
+        <start>2021-03-24</start>
+        <end>2021-03-26</end>
+        <days>3</days>
+        <timeslot_duration>00:10</timeslot_duration>
+        <base_url>https://act.yapc.eu/gpw2021/</base_url>
+    </conference>
+
+    <day date='2021-03-24' end='2021-03-24T16:30:00+01:00' index='1' start='2021-03-24T13:30:00+01:00'>
+        <room name='main'>
+            <event guid='D632787B-8B31-11EB-8C1C-9DD087D77F1D' id='1234'>
+                <date>2021-03-24T10:00:00+01:00</date>
+                <start>10:00:00</start>
+                <duration>03:30</duration>
+                <room>main</room>
+                <slug>testbild</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7769</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Testbild</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>Testbild</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='7158'>Max Maischein</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D632787A-8B31-11EB-8C1C-9DD087D77F1D' id='7769'>
+                <date>2021-03-24T13:30:00+01:00</date>
+                <start>13:30:00</start>
+                <duration>00:20</duration>
+                <room>main</room>
+                <slug>willkommen-zum-gpw</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7769</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Willkommen zum GPW</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>Willkommen zum GPW 2021</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='7158'>Max Maischein</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D63277A8-8B31-11EB-8C1C-9DD087D77F1D' id='7768'>
+                <date>2021-03-24T13:50:00+01:00</date>
+                <start>13:50:00</start>
+                <duration>00:40</duration>
+                <room>main</room>
+                <slug>perl-in-2025</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7768</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Perl in 2025</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>en</language>
+                <abstract>Abstract to follow</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='6354'>Paul Evans</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D6327186-8B31-11EB-8C1C-9DD087D77F1D' id='7762'>
+                <date>2021-03-24T14:40:00+01:00</date>
+                <start>14:40:00</start>
+                <duration>00:25</duration>
+                <room>main</room>
+                <slug>beopardy-die-software-hinter-dem-ccc-hacker-jeopary</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7762</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Beopardy - Die Software hinter dem CCC Hacker Jeopary</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>- beopardy, was ist das
+- warum _b_?
+- warum perl?
+- MVP (Minimum Viable Product)
+- Evolution a.k.a. featuritis
+- kurzer Blick auf die Hardware</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='880'>Stefan Zehl</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D63275F0-8B31-11EB-8C1C-9DD087D77F1D' id='7766'>
+                <date>2021-03-24T15:10:00+01:00</date>
+                <start>15:10:00</start>
+                <duration>00:40</duration>
+                <room>main</room>
+                <slug>pheix-cms-is-released</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7766</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Pheix CMS is β-released</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>en</language>
+                <abstract>Pheix – Artistic 2.0 license compliant, Raku driven content management system with data storing on Ethereum blockchain. It is extremely lightweight, fast &amp; scalable. Official public beta release was announced on 19th February 2021 and we have already a few projects driven by Pheix in production.
+
+Traditionally the beta version is published once all scheduled major features have been implemented and released. As with any program beta release, now you have got the access to new features, so you are likely to try Pheix as less stable, but closer to final version. The major Pheix beta release improvements are related to content rendering performance, blockchain support and overall design.
+
+I will introduce you to the beta release breaking changes. We will focus on the most important ones and consider them in detail, discuss how and for what purposes Pheix can be applied today. Also I would like to go through the cases where Pheix is used as a migration tool for web3.0 projects, draw up a short profile of the ideal project, assess the complexity of migration and discuss the most significant advantages and disadvantages.
+
+In conclusion, prospects for the Pheix project will be considered, I will present the Release Candidate 1 roadmap and the features that will be included in this upcoming release.
+
+This talk primarily for software architects and developers of distributed content systems, as well as Raku enthusiasts who are involved in blockchain technology and decentralization issues.</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='12355'>Konstantin Narkhov</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D6326308-8B31-11EB-8C1C-9DD087D77F1D' id='7747'>
+                <date>2021-03-24T16:00:00+01:00</date>
+                <start>16:00:00</start>
+                <duration>00:20</duration>
+                <room>main</room>
+                <slug>mojolicious-nuclino</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7747</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Mojolicious &amp; Nuclino</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>In unserem Unternehmen nutzen wir Nuclino für das Wissensmanagement (oder auch einfach nur als Wiki). Da wir die Informationen sichern wollen und diese auch an anderer Stelle nutzen wollen, arbeiten wir mit Mojolicious. Was wir da genau machen und was das tolle dabei an Mojolicious ist, will ich in diesem Vortrag zeigen.</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='1275'>Renee Bäcker</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+        </room>
+    </day>
+
+    <day date='2021-03-25' end='2021-03-25T14:20:00+01:00' index='2' start='2021-03-25T15:10:00+01:00'>
+        <room name='main'>
+            <event guid='D6327424-8B31-11EB-8C1C-9DD087D77F1D' id='7765'>
+                <date>2021-03-25T13:30:00+01:00</date>
+                <start>13:30:00</start>
+                <duration>00:45</duration>
+                <room>main</room>
+                <slug>things-you-may-not-know-about-cro</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7765</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Things you may not know about Cro</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>en</language>
+                <abstract>Cro is a set of Raku libraries most commonly used for building web services and applications. The signature-powered routing and the internal DSL for processing HTTP requests are the aspects of Cro mostly commonly on display - but in this session, I'd like to look at some of the other things on offer, including:
+
+* The included asynchronous HTTP client
+* WebSockets (both client and server side)
+* Cro::HTTP::Test for writing router tests, or even tests of non-Cro HTTP services
+* OpenAPI support
+* Templates
+* Forms
+* Support for Cro developers in the Comma IDE</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='1174'>Jonathan Worthington</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D6326A06-8B31-11EB-8C1C-9DD087D77F1D' id='7756'>
+                <date>2021-03-25T14:20:00+01:00</date>
+                <start>14:20:00</start>
+                <duration>00:40</duration>
+                <room>main</room>
+                <slug>perl-release-fur-jedermann</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7756</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Perl Release für Jedermann</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>Perl veröffentlicht jeden Monat eine Entwicklerversion, welche den aktuellen Stand wiederspiegelt. Einmal im Jahr wird aus der Entwicklerversion die stabile Perl Version. Der Prozeß zur Veröffentlichung ist gut eingespielt, aber nicht jedem transparent.
+
+Dieser Vortrag versucht, die Schritte und Zusammenhänge darzustellen und die Rolle des Perl Release Managers zu erklären.</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='323'>Max Maischein</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D6327276-8B31-11EB-8C1C-9DD087D77F1D' id='7763'>
+                <date>2021-03-25T15:10:00+01:00</date>
+                <start>15:10:00</start>
+                <duration>00:35</duration>
+                <room>main</room>
+                <slug>ein-ingenieur-hats-schwor</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7763</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Ein Ingenieur hats schwör</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>Neuere Entwicklungen im Bereich Softwarearchitektur, Planung und Entwurf mit eigenen Kommentaren. Besondere Erwähnung werden finden: ADD (Attribute driven design), 4C Modell und eine Rundschau neuerer Literatur.</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='2743'>Herbert Breunung</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D6327279-8B31-11EB-8C1C-9DD087D77F1D' id='7772'>
+                <date>2021-03-25T15:55:00+01:00</date>
+                <start>15:55:00</start>
+                <duration>00:25</duration>
+                <room>main</room>
+                <slug>ein-ingenieur-hats-schwor-teil2</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7772</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Ein Ingenieur hats schwör (Teil 2)</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>Neuere Entwicklungen im Bereich Softwarearchitektur, Planung und Entwurf mit eigenen Kommentaren. Besondere Erwähnung werden finden: ADD (Attribute driven design), 4C Modell und eine Rundschau neuerer Literatur.</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='2743'>Herbert Breunung</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D6327278-8B31-11EB-8C1C-9DD087D77F1D' id='2190'>
+                <date>2021-03-25T16:25:00+01:00</date>
+                <start>16:25:00</start>
+                <duration>00:60</duration>
+                <room>main</room>
+                <slug>lightning-talks</slug>
+                <url>https://act.yapc.eu/gpw2021//event/2190</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Lightning Talks</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>Vorträge mit einer Dauer von (maximal) 5 Minuten</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='2743'>Max Maischein</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+        </room>
+    </day>
+
+    <day date='2021-03-26' end='2021-03-26T16:00:00+01:00' index='3' start='2021-03-26T16:30:00+01:00'>
+        <room name='main'>
+            <event guid='D6326BC8-8B31-11EB-8C1C-9DD087D77F1D' id='7757'>
+                <date>2021-03-26T13:30:00+01:00</date>
+                <start>13:30:00</start>
+                <duration>00:40</duration>
+                <room>main</room>
+                <slug>turning-humans-into-developers-from-far-far-away</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7757</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Turning humans into developers from far, far away</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>Wie ich in einem Jahr remote meinen Job neu gelernt habe. Ausbildung, Mentoring und Management auf Distanz. Praktische Tips und Erfahrungen.</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='8609'>Julien Fiegehenn</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D6325D7C-8B31-11EB-8C1C-9DD087D77F1D' id='7746'>
+                <date>2021-03-26T14:20:00+01:00</date>
+                <start>14:20:00</start>
+                <duration>00:40</duration>
+                <room>main</room>
+                <slug>regex-security</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7746</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Regex-Security</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>Ein ungünstig geschriebener Regulärer Ausdruck kann dafür sorgen, dass die Anwendung nicht mehr erreichbar ist (ReDOS). Noch schwieriger wird das mit der Sicherheit wenn man dem Benutzer erlaubt Reguläre Ausdrücke einzugeben. Was wir machen, um zumindest einige Schwachstellen rauszufiltern, und was man machen kann um ReDOS zumindest zu erschweren, will ich in diesem Vortrag zeigen.</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='1275'>Renee Bäcker</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D63276F4-8B31-11EB-8C1C-9DD087D77F1D' id='7767'>
+                <date>2021-03-26T15:10:00+01:00</date>
+                <start>15:10:00</start>
+                <duration>00:40</duration>
+                <room>main</room>
+                <slug>my-rules-for-running-a-data-lake</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7767</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>My Rules for running a Data Lake</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>Der Data Lake ist eine Reporting Datenbank, welche für regelmäßige Reports und Ad-Hoc Reporting genutzt wird.</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='323'>Max Maischein</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D6326D4E-8B31-11EB-8C1C-9DD087D77F1D' id='7758'>
+                <date>2021-03-26T16:00:00+01:00</date>
+                <start>16:00:00</start>
+                <duration>00:25</duration>
+                <room>main</room>
+                <slug>perl-in-cicd-workflows-yes-you-can</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7758</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Perl in CI/CD workflows: Yes you can!</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>en</language>
+                <abstract>Perl is buried, but only because it's underneath everything and nobody ever bothered to dig for it. Since it's in every Debian, and most Ubuntu LTS distributions, it's readily available to use. Besides, default systems include a good amount of libraries you can use in your workflows.
+In this talk, we will show how you can use perl in "bare" (without explicitly selecting perl or a container) CI/CD workflows, what kind of tricks you can use to speed them up, and how you can improve your experience with CPAN modules such as GitHub::Actions</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='5114'>Juan Julián Merelo-Guervós</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D6327032-8B31-11EB-8C1C-9DD087D77F1D' id='7761'>
+                <date>2021-03-26T16:30:00+01:00</date>
+                <start>16:30:00</start>
+                <duration>00:40</duration>
+                <room>main</room>
+                <slug>pinpointing-changes-with-bisection</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7761</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Pinpointing Changes with Bisection</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language>de</language>
+                <abstract>A tutorial with practical examples showing how to determine exactly when things in the Perl core changed; many things discussed will also apply to any git repository!</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='12098'>Hauke Dämpfling</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+            <event guid='D63279BA-8B31-11EB-8C1C-9DD087D77F1D' id='7770'>
+                <date>2021-03-26T17:10:00+01:00</date>
+                <start>17:10:00</start>
+                <duration>00:40</duration>
+                <room>main</room>
+                <slug>vorschau-auf-den-gpw-2022-in-leipzig</slug>
+                <url>https://act.yapc.eu/gpw2021//talk/7770</url>
+                <recording>
+                    <license></license>
+                    <optout>false</optout>
+                </recording>
+                <title>Vorschau auf den GPW 2022 in Leipzig / Verabschiedung</title>
+                <subtitle></subtitle>
+                <track>GPW2021</track>
+                <type>lecture</type>
+                <language></language>
+                <abstract>Vorschau auf den GPW 2022 in Leipzig
+
+... dann hoffentlich wieder als Präsenzveranstaltung</abstract>
+                <description></description>
+                <logo></logo>
+                <persons>
+                    <person id='7158'>Daniel Böhmer</person>
+                </persons>
+                <links>
+                </links>
+                <attachments>
+                </attachments>
+            </event>
+        </room>
+    </day>
+</schedule>
