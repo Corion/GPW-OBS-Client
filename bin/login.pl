@@ -1,4 +1,5 @@
 #!perl
+use 5.012;
 use strict;
 use warnings;
 use Filter::signatures;
@@ -17,20 +18,23 @@ GetOptions(
 
 $url //= 'ws://localhost:4444';
 
-my $h = Mojo::OBS::Client->new;
-my $r = $h->connect($url)->then(sub {
-    $h->send_message($h->protocol->GetVersion());
-})->then(sub {
-    $h->send_message($h->protocol->GetAuthRequired());
-})->then(sub( $challenge ) {
-    $h->send_message($h->protocol->Authenticate($password,$challenge));
-})->then(sub( $challenge ) {
-    $h->send_message($h->protocol->SetTextFreetype2Properties( source => 'Text.NextTalk',text => 'Hello World'))
-})->then(sub( $challenge ) {
-    $h->send_message($h->protocol->GetSourceSettings( sourceName => 'VLC.Vortrag', sourceType => 'vlc_source'))
-})->then(sub( $challenge ) {
+my $h = Mojo::OBS::Client->new(
+    #debug => 1
+);
+
+my $r = $h->login( $url, $password )
+->then(sub($res) {
+    if( $res->{error}) {
+        die $res->{error}
+    } else {
+        say "Logged into $url";
+        $h->SetTextFreetype2Properties( source => 'Text.NextTalk',text => 'Hello World')
+    };
+})->then(sub(@) {
+    $h->GetSourceSettings( sourceName => 'VLC.Vortrag', sourceType => 'vlc_source')
+})->then(sub(@) {
     # Queue up a talk
-    $h->send_message($h->protocol->SetSourceSettings( sourceName => 'VLC.Vortrag', sourceType => 'vlc_source',
+    $h->SetSourceSettings( sourceName => 'VLC.Vortrag', sourceType => 'vlc_source',
     sourceSettings => {
                                 'playlist' => [
                                                 {
@@ -40,11 +44,15 @@ my $r = $h->connect($url)->then(sub {
                                                 }
                                               ]
                                           },
-    ))
+    );
+
+    say "Stopping loop";
+    Mojo::IOLoop->stop_gracefully;
+    return Future->done;
+
 })->catch(sub {
-    use Data::Dumper;
-    warn Dumper \@_;
-    });
+    warn $_[0];
+    Mojo::IOLoop->stop_gracefully;
+});
 
 Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
-
