@@ -131,6 +131,12 @@ sub GetCurrentScene($self) {
     })
 }
 
+=head2 C<< ->SetCurrentScene $sceneName >>
+
+Sets the current broadcast scene
+
+=cut
+
 sub SetCurrentScene($self, $sceneName) {
     return $self->nextMessage({
         'request-type' => 'SetCurrentScene',
@@ -138,11 +144,23 @@ sub SetCurrentScene($self, $sceneName) {
     })
 }
 
+=head2 C<< ->GetPreviewScene >>
+
+Gets the current preview scene
+
+=cut
+
 sub GetPreviewScene($self) {
     return $self->nextMessage({
         'request-type' => 'GetPreviewScene',
     })
 }
+
+=head2 C<< ->SetPreviewScene $sceneName >>
+
+Sets the current preview scene
+
+=cut
 
 sub SetPreviewScene($self, $sceneName) {
     return $self->nextMessage({
