@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<schedule>
+<generator name='frab' version='0.7'></generator>
+<version>mkdir</version>
+<conference>
+<acronym>36c3</acronym>
+<title>36th Chaos Communication Congress</title>
+<start>2019-12-27</start>
+<end>2019-12-30</end>
+<days>4</days>
+<timeslot_duration>00:10</timeslot_duration>
+<base_url>https://fahrplan.events.ccc.de/congress/2019/Fahrplan/</base_url>
+</conference>
+<day date='2019-12-27' end='2019-12-28T04:00:00+01:00' index='1' start='2019-12-27T11:00:00+01:00'>
+<room name='Ada'>
+<event guid='6a32cb72-a69d-423c-91b5-60d88eb8e6c7' id='123'>
+<date>2019-12-27T11:00:00+01:00</date>
+<start>11:00</start>
+<duration>00:30</duration>
+<room>Ada</room>
+<slug>36c3-11223-opening_ceremony</slug>
+<url>https://fahrplan.events.ccc.de/congress/2019/Fahrplan/events/11223.html</url>
+<recording>
+<license></license>
+<optout>false</optout>
+</recording>
+<title>Opening Ceremony</title>
+<subtitle></subtitle>
+<track>CCC</track>
+<type>lecture</type>
+<language>de</language>
+<abstract>Welcome!</abstract>
+<description></description>
+<logo></logo>
+<persons>
+<person id='9891'>Max Maischein</person>
+<person id='9892'>Daniel Böhmer</person>
+</persons>
+<links>
+</links>
+<attachments>
+</attachments>
+<scene>Orga-Screenshare (obs.ninja)</scene>
+</event>
+<event guid='3aae5c0a-9c9b-483a-8c09-b4402d749a82' id='7756'>
+<date>2019-12-27T11:30:00+01:00</date>
+<start>11:30</start>
+<duration>01:00</duration>
+<room>Ada</room>
+<slug>36c3-11220-the_case_for_scale_in_cyber_security</slug>
+<url>https://fahrplan.events.ccc.de/congress/2019/Fahrplan/events/11220.html</url>
+<recording>
+<license></license>
+<optout>false</optout>
+</recording>
+<title>My Personal Weather App</title>
+<subtitle>demo talk</subtitle>
+<track>CCC</track>
+<type>lecture</type>
+<language>en</language>
+<abstract>The impact of scale in our field has been enormous and it has transformed the tools, the jobs and the face of the Infosec community. In this talk we discuss some of the ways in which defense has benefitted from scale, how the industry might be transitioning to a new phase of its growth and how the community will have to evolve to stay relevant.</abstract>
+<description></description>
+<video>2020-06-23 16-17-26-tcpic-personal-weather-app-max-maischein.mp4</video>
+<talk_duration>32:42</talk_duration>
+<logo></logo>
+<persons>
+<person id='9846'>Max Maischein</person>
+</persons>
+<links>
+</links>
+<attachments>
+</attachments>
+</event>
+</room>
+</day>
+</schedule>
