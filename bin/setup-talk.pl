@@ -24,30 +24,17 @@ $url //= 'ws://localhost:4444';
 
 my $h = Mojo::OBS::Client->new;
 
-sub login( $url, $password ) {
-
-    return $h->connect($url)->then(sub {
-        $h->send_message($h->protocol->GetVersion());
-    })->then(sub {
-        $h->send_message($h->protocol->GetAuthRequired());
-    })->then(sub( $challenge ) {
-        $h->send_message($h->protocol->Authenticate($password,$challenge));
-    })->catch(sub {
-        use Data::Dumper;
-        warn Dumper \@_;
-    });
-};
 
 sub setup_talk( $obs, %info ) {
 
     my @text = grep { /^Text\./ } keys %info;
     my @f = map {
-        $obs->send_message($h->protocol->SetTextFreetype2Properties( source => $_,text => $info{ $_ }))
+        $obs->SetTextFreetype2Properties( source => $_,text => $info{ $_ })
     } (@text);
 
     my @video = grep { /^VLC\./ } keys %info;
     push @f, map {
-        $h->send_message($h->protocol->SetSourceSettings( sourceName => $_, sourceType => 'vlc_source',
+        $h->SetSourceSettings( sourceName => $_, sourceType => 'vlc_source',
                          sourceSettings => {
                                 'playlist' => [
                                                 {
@@ -56,24 +43,24 @@ sub setup_talk( $obs, %info ) {
                                                   'selected' => $JSON::false,
                                                 }
                                               ]
-                                          }))
+                                          })
     } @video;
 
     return Future->wait_all( @f );
 }
 
 sub switch_scene( $obs, $old_scene, $new_scene ) {
-    return $obs->send_message($obs->protocol->GetCurrentScene())
+    return $obs->GetCurrentScene()
     ->then(sub( $info ) {
         if( $info->{sceneName} eq $old_scene ) {
-            return $obs->send_message($obs->protocol->SetCurrentScene(sceneName => $new_scene))
+            return $obs->SetCurrentScene($new_scene)
         } else {
             return Future->done(0)
         }
     });
 }
 
-login( $url, $password )->then(sub {
+$h->login( $url, $password )->then(sub {
     say "Setting up talk";
     return setup_talk( $h,
         @ARGV

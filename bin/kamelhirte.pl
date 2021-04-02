@@ -583,7 +583,7 @@ sub setup_talk( $obs, %info ) {
 
     my @text = grep { /^Text\./ } keys %info;
     my @f = map {
-        $obs->send_message($obs->protocol->SetTextFreetype2Properties( source => $_,text => $info{ $_ }))
+        $obs->SetTextFreetype2Properties( source => $_,text => $info{ $_ })
     } (@text);
 
     my @video = grep { /^VLC\./ } keys %info;
@@ -601,10 +601,12 @@ sub setup_talk( $obs, %info ) {
                                 }
                              } @$videos;
 
-        $obs->send_message($obs->protocol->SetSourceSettings( sourceName => $_, sourceType => 'vlc_source',
-                         sourceSettings => {
-                                'playlist' => \@videofiles
-                                          }))
+        $obs->SetSourceSettings(
+            sourceName => $_,
+            sourceType => 'vlc_source',
+            sourceSettings => {
+                'playlist' => \@videofiles
+            })
     } @video;
 
     return Future->wait_all( @f )->catch(sub { use Data::Dumper; warn Dumper \@_; exit });
@@ -615,7 +617,7 @@ sub switch_scene( $obs, $old_scene, $new_scene ) {
     #->then(sub( $info ) {
         #if( $info->{name} eq $old_scene ) {
             #warn "Switching from '$info->{name}' to '$new_scene'";
-    return $obs->send_message($obs->protocol->SetCurrentScene($new_scene))
+    return $obs->SetCurrentScene($new_scene)
         #} else {
         #    warn "Weird/unexpected scene '$info->{name}', not switching to '$new_scene'";
         #    return Future->done(0)
@@ -645,7 +647,7 @@ sub scene_changed( $h, $sc ) {
         # if we changed the talk, stop recording
         push @actions, "Stopping recording";
         $f = $f->then(sub {
-            $h->send_message( $h->protocol->StopRecording())
+            $h->StopRecording()
         });
 
         my @video;
@@ -682,7 +684,7 @@ sub scene_changed( $h, $sc ) {
         if( $sc->{record} and ( $last_talk != $sc->{talk_info} or !$last_scene->{record} )) {
             push @actions, "Starting recording";
             $f = $f->then(sub {
-                $h->send_message( $h->protocol->StartRecording())
+                $h->StartRecording()
             });
         };
 
@@ -756,9 +758,10 @@ sub onScenesSwitched($info) {
 
     my $mute = !$have_browser ? $JSON::PP::true : $JSON::PP::false;
 
-    my $toggle_browser_sound = $obs->send_message($obs->protocol->SetMute(
+    my $toggle_browser_sound = $obs->SetMute(
         source => 'Desktop Audio',
-        mute => $mute ));
+        mute => $mute
+    );
     $toggle_browser_sound->retain;
 };
 
@@ -824,7 +827,7 @@ if( $dryrun ) {
 
 } else {
     $logged_in = $obs->login( $url, $password )->then( sub {
-        $obs->send_message($obs->protocol->GetCurrentScene())
+        $obs->GetCurrentScene()
     })->then(sub( $info ) {
         $last_scene = $info
     })->then(sub {
