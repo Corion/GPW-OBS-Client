@@ -579,20 +579,6 @@ sub print_events( $action, $events, $ts=time ) {
     };
 }
 
-sub login( $h, $url, $password ) {
-
-    return $h->connect($url)->then(sub {
-        $h->send_message($h->protocol->GetVersion());
-    })->then(sub {
-        $h->send_message($h->protocol->GetAuthRequired());
-    })->then(sub( $challenge ) {
-        $h->send_message($h->protocol->Authenticate($password,$challenge));
-    })->catch(sub {
-        use Data::Dumper;
-        warn Dumper \@_;
-    });
-};
-
 sub setup_talk( $obs, %info ) {
 
     my @text = grep { /^Text\./ } keys %info;
@@ -837,7 +823,7 @@ if( $dryrun ) {
     @events  = read_events( $schedule );
 
 } else {
-    $logged_in = login( $obs, $url, $password )->then( sub {
+    $logged_in = $obs->login( $url, $password )->then( sub {
         $obs->send_message($obs->protocol->GetCurrentScene())
     })->then(sub( $info ) {
         $last_scene = $info
