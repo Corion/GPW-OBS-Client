@@ -2,6 +2,7 @@ package Mojo::OBS::Client;
 use 5.012;
 use Moo;
 use Mojo::UserAgent;
+use Encode qw( encode decode );
 use Mojo::JSON 'decode_json', 'encode_json';
 use Net::Protocol::OBSRemote;
 use Future::Mojo;
@@ -94,7 +95,8 @@ sub connect($self,$ws_url) {
             });
 
             $tx->on(message => sub($tx,$msg) {
-                my $payload = decode_json($msg);
+                # At least from Windows, OBS sends Latin-1 in JSON
+                my $payload = decode_json(encode('UTF-8',decode('Latin-1', $msg)));
 
                 if( my $type = $payload->{"update-type"}) {
                     #use Data::Dumper;
